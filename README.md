@@ -57,7 +57,7 @@ This project is licensed under the MIT License.
 
 This repository includes diagrams and documentation hosted at:
 
-**https://DDV1975.github.io/satellite-defense-toolkit/**
+**[https://DDV1975.github.io/satellite-defense-toolkit/](https://github.com/DDV1975/satellite-defense-tookit.git)**
 
 ---
 

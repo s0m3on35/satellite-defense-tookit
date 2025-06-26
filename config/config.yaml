@@ -1,8 +1,0 @@
-contamination: 0.1
-scan_range: [1570, 1620]
-duration: 10
-firmware_path: sample_firmware.bin
-expected_hash: d41d8cd98f00b204e9800998ecf8427e
-interval: 5
-hash_algo: md5
-threshold: 3.0

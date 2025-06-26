@@ -1,4 +1,4 @@
-# 🛰️ Advanced Satellite Defense Toolkit
+# 🛰️ Satellite Defense Toolkit
 
 !(docs/wiki/banner.jpg)
 

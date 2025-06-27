@@ -1,4 +1,4 @@
-# ⚙️ Configuration Guide
+# Configuration Guide
 
 Each module reads from `config/config.yaml`. Sample keys:
 ```yaml

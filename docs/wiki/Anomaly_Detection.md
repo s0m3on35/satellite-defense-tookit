@@ -1,4 +1,4 @@
-# 📊 Anomaly Detection
+#  Anomaly Detection
 
 Uses Isolation Forest and Z-score detection.
 

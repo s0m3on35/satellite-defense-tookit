@@ -18,7 +18,7 @@
 
 ---
 
-## 📐 Architecture
+## Architecture
 
 ![Architecture](docs/wiki/architecture.png)
 

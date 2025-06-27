@@ -1,4 +1,4 @@
-# 🔐 Firmware Integrity Monitoring
+#  Firmware Integrity Monitoring
 
 Watches a target file and validates via:
 

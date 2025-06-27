@@ -60,5 +60,6 @@ This repository includes diagrams and documentation hosted at:
 **[https://DDV1975.github.io/satellite-defense-toolkit/](https://github.com/DDV1975/satellite-defense-tookit.git)**
 
 ---
-
+## 🔒 Usage Notice
+This repository is NOT authorized for public redistribution, forking, or reuse. Contact the author for permissions.
 

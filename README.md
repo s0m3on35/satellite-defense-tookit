@@ -1,4 +1,4 @@
-# 🛰️ Satellite Defense Toolkit
+#  Satellite Defense Toolkit
 
 !(docs/wiki/banner.jpg)
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 📌 Key Modules
+## Key Modules
 
 | Module | Description |
 |--------|-------------|
@@ -24,7 +24,7 @@
 
 ---
 
-## 🔧 How to Use
+##  How to Use
 
 ```bash
 python3 satellite_defense_toolkit_launcher.py
@@ -34,7 +34,7 @@ Use the launcher to interactively configure modules, analyze logs, and export re
 
 ---
 
-## 📁 Folder Structure
+## Folder Structure
 
 ```
 satellite-defense-toolkit/
@@ -47,13 +47,13 @@ satellite-defense-toolkit/
 
 ---
 
-## 🛡️ License
+##  License
 
 This project is licensed under the MIT License.
 
 ---
 
-## 🚀 GitHub Pages
+##  GitHub Pages
 
 This repository includes diagrams and documentation hosted at:
 
@@ -61,4 +61,4 @@ This repository includes diagrams and documentation hosted at:
 
 ---
 
-## 🌌 Made with ❤️ for cyber-defense in space.
+

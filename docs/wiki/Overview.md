@@ -1,4 +1,4 @@
-# 📖 Toolkit Overview
+#  Toolkit Overview
 
 This project offers modular scripts to secure satellite-connected systems including health telemetry, GNSS receivers, and OTA firmware.
 

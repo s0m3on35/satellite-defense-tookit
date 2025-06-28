@@ -25,7 +25,7 @@ def main():
     while True:
         print("""
 ==============================
-🛰️ Satellite Defense Toolkit
+ Satellite Defense Toolkit
 ==============================
 1. GNSS AI Anomaly Detector
 2. RF Jammer Locator

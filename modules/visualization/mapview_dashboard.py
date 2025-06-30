@@ -1,5 +1,4 @@
-# modules/visualization/mapview_dashboard.py
-# Terminal-based agent map viewer (military-grade)
+# modules/visualization/
 
 import json
 import os

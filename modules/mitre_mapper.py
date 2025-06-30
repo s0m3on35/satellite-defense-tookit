@@ -1,112 +1,90 @@
 import json
 import os
 from datetime import datetime
-import uuid
+from collections import defaultdict
+from xml.etree.ElementTree import Element, SubElement, ElementTree
+import requests
 
-# === MITRE Tactics and Kill Chain Definitions ===
-MITRE_KILL_CHAIN = [
-    "Reconnaissance", "Resource Development", "Initial Access", "Execution",
-    "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access",
-    "Discovery", "Lateral Movement", "Collection", "Command and Control",
-    "Exfiltration", "Impact"
-]
+# === Config ===
+MITRE_DB_PATH = "results/local_mitre_db.json"
+KILLCHAIN_OUTPUT = "results/mitre_killchain_map.json"
+SVG_MATRIX_OUTPUT = "results/mitre_matrix.svg"
+WEBHOOK_URL = "http://localhost:5000/webhook"  # change as needed
 
-# === Demo TTP Match Fallback ===
-DEMO_EVENTS = [
-    {"id": "T1059", "technique": "Command and Scripting Interpreter", "tactic": "Execution"},
-    {"id": "T1071", "technique": "Application Layer Protocol", "tactic": "Command and Control"},
-    {"id": "T1046", "technique": "Network Service Scanning", "tactic": "Discovery"}
-]
+# === Sample TTP mapping DB auto-generator ===
+def generate_default_mitre_db():
+    default_data = [
+        {"id": "T1003", "name": "Credential Dumping", "phase": "Credential Access"},
+        {"id": "T1059", "name": "Command and Scripting Interpreter", "phase": "Execution"},
+        {"id": "T1203", "name": "Exploitation for Client Execution", "phase": "Initial Access"},
+        {"id": "T1021", "name": "Remote Services", "phase": "Lateral Movement"},
+        {"id": "T1486", "name": "Data Encrypted for Impact", "phase": "Impact"},
+        {"id": "T1046", "name": "Network Service Scanning", "phase": "Discovery"}
+    ]
+    os.makedirs("results", exist_ok=True)
+    with open(MITRE_DB_PATH, "w") as f:
+        json.dump(default_data, f, indent=4)
 
-def load_ttp_matches(file_path="results/matched_ttp_events.json"):
-    if not os.path.exists(file_path):
-        os.makedirs("results", exist_ok=True)
-        with open(file_path, "w") as f:
-            json.dump(DEMO_EVENTS, f, indent=4)
-    with open(file_path, "r") as f:
+# === Load TTP Observations ===
+def load_mitre_db():
+    if not os.path.exists(MITRE_DB_PATH):
+        generate_default_mitre_db()
+    with open(MITRE_DB_PATH) as f:
         return json.load(f)
 
+# === Generate Kill Chain Map ===
 def generate_kill_chain_map(ttps):
-    killchain = {}
-    for entry in ttps:
-        tactic = entry.get("tactic", "Unknown")
-        if tactic not in killchain:
-            killchain[tactic] = []
-        killchain[tactic].append(entry["id"])
-    with open("results/mitre_killchain_map.json", "w") as f:
-        json.dump(killchain, f, indent=4)
+    killchain_map = defaultdict(list)
+    for ttp in ttps:
+        phase = ttp.get("phase", "Unknown")
+        killchain_map[phase].append({
+            "id": ttp["id"],
+            "name": ttp["name"]
+        })
+    with open(KILLCHAIN_OUTPUT, "w") as f:
+        json.dump(killchain_map, f, indent=4)
+    return killchain_map
 
-def generate_stix_bundle(ttps):
-    bundle = {
-        "type": "bundle",
-        "id": f"bundle--{uuid.uuid4()}",
-        "objects": []
+# === SVG Matrix ===
+def generate_svg_matrix(killchain_map, output_path):
+    svg = Element('svg', width='900', height='500', xmlns='http://www.w3.org/2000/svg')
+    y_offset = 40
+    for idx, (phase, ttps) in enumerate(killchain_map.items()):
+        SubElement(svg, 'text', x='20', y=str(y_offset), fill='black').text = phase
+        for jdx, ttp in enumerate(ttps):
+            box_y = y_offset + jdx * 30
+            SubElement(svg, 'rect', x='150', y=str(box_y), width='250', height='25', fill='lightgray')
+            SubElement(svg, 'text', x='155', y=str(box_y + 18), fill='black').text = f"{ttp['id']} - {ttp['name']}"
+        y_offset += max(len(ttps), 1) * 30 + 20
+    ElementTree(svg).write(output_path)
+
+# === Webhook Alert ===
+def send_webhook_alert(ttps):
+    payload = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "alert_type": "MITRE_TTP_SPIKE",
+        "matched_ttps": ttps
     }
-    timestamp = datetime.utcnow().isoformat() + "Z"
-    for entry in ttps:
-        stix_obj = {
-            "type": "attack-pattern",
-            "spec_version": "2.1",
-            "id": f"attack-pattern--{entry['id']}",
-            "created": timestamp,
-            "modified": timestamp,
-            "name": entry["technique"],
-            "external_references": [
-                {
-                    "source_name": "mitre-attack",
-                    "external_id": entry["id"],
-                    "url": f"https://attack.mitre.org/techniques/{entry['id']}/"
-                }
-            ]
-        }
-        bundle["objects"].append(stix_obj)
-    with open("results/mitre_stix_bundle.json", "w") as f:
-        json.dump(bundle, f, indent=4)
+    try:
+        requests.post(WEBHOOK_URL, json=payload, timeout=3)
+    except Exception as e:
+        print(f"[!] Webhook failed: {e}")
 
-def generate_svg_matrix(ttps):
-    svg_content = [
-        '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
-        '<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="800">',
-        '<style>text{font-size:12px;font-family:monospace;} rect{stroke:black;fill:white;} .hit{fill:red;}</style>'
-    ]
-    x_spacing, y_spacing = 110, 30
-    for i, tactic in enumerate(MITRE_KILL_CHAIN):
-        svg_content.append(f'<text x="{i*x_spacing+10}" y="20">{tactic}</text>')
-        for j in range(10):  # max 10 TTPs per tactic (adjustable)
-            y = j * y_spacing + 40
-            rect_x = i * x_spacing
-            rect_id = f"{rect_x}_{y}"
-            svg_content.append(f'<rect id="rect_{rect_id}" x="{rect_x}" y="{y}" width="100" height="20"/>')
+# === WebSocket Trigger (requires ws dashboard server to listen for file changes) ===
+def touch_results_file_for_ws_trigger():
+    with open("results/trigger_mitre_event.txt", "w") as f:
+        f.write(datetime.utcnow().isoformat())
 
-    # Highlight matched TTPs
-    for entry in ttps:
-        tactic = entry.get("tactic", "Unknown")
-        if tactic in MITRE_KILL_CHAIN:
-            col = MITRE_KILL_CHAIN.index(tactic)
-            idx = ttps.index(entry)
-            y = idx * y_spacing + 40
-            x = col * x_spacing
-            svg_content.append(f'<rect x="{x}" y="{y}" width="100" height="20" class="hit"/>')
-            svg_content.append(f'<text x="{x+5}" y="{y+15}">{entry["id"]}</text>')
-
-    svg_content.append('</svg>')
-    with open("results/mitre_matrix.svg", "w") as f:
-        f.write("\n".join(svg_content))
-
+# === Main ===
 def main():
-    print("[+] Loading TTP events...")
-    ttp_data = load_ttp_matches()
-
-    print("[+] Generating kill chain JSON map...")
-    generate_kill_chain_map(ttp_data)
-
-    print("[+] Generating STIX bundle...")
-    generate_stix_bundle(ttp_data)
-
-    print("[+] Generating MITRE matrix SVG...")
-    generate_svg_matrix(ttp_data)
-
-    print("[✓] MITRE mapping artifacts saved to `results/`")
+    ttps = load_mitre_db()
+    killchain_map = generate_kill_chain_map(ttps)
+    generate_svg_matrix(killchain_map, SVG_MATRIX_OUTPUT)
+    send_webhook_alert(ttps)
+    touch_results_file_for_ws_trigger()
+    print(f"[✓] Matrix generated at {SVG_MATRIX_OUTPUT}")
+    print(f"[✓] Kill chain map saved to {KILLCHAIN_OUTPUT}")
+    print("[✓] Alerts dispatched")
 
 if __name__ == "__main__":
     main()

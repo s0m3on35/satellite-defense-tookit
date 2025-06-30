@@ -1,80 +1,80 @@
-import os
 import json
-import sys
-import subprocess
+import os
+from datetime import datetime
+from collections import defaultdict
 import matplotlib.pyplot as plt
-import shutil
+import matplotlib.patches as mpatches
 
-try:
-    from graphviz import Digraph
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "graphviz"])
-    from graphviz import Digraph
+# === Embedded Local MITRE DB Fallback ===
+DEFAULT_MITRE_DB = [
+    {"tactic": "Initial Access", "technique": "Phishing", "id": "T1566"},
+    {"tactic": "Execution", "technique": "Command and Scripting Interpreter", "id": "T1059"},
+    {"tactic": "Persistence", "technique": "Boot or Logon Autostart Execution", "id": "T1547"},
+    {"tactic": "Privilege Escalation", "technique": "Process Injection", "id": "T1055"},
+    {"tactic": "Defense Evasion", "technique": "Obfuscated Files or Information", "id": "T1027"},
+    {"tactic": "Credential Access", "technique": "Credential Dumping", "id": "T1003"},
+    {"tactic": "Discovery", "technique": "System Information Discovery", "id": "T1082"},
+    {"tactic": "Lateral Movement", "technique": "Remote Services", "id": "T1021"},
+    {"tactic": "Collection", "technique": "Data from Local System", "id": "T1005"},
+    {"tactic": "Exfiltration", "technique": "Exfiltration Over C2 Channel", "id": "T1041"},
+    {"tactic": "Command and Control", "technique": "Application Layer Protocol", "id": "T1071"}
+]
 
-if not shutil.which("dot"):
-    print("[!] Graphviz binary not found. Trying to install...")
-    if sys.platform.startswith("linux"):
-        subprocess.call(["apt-get", "update"])
-        subprocess.call(["apt-get", "install", "-y", "graphviz"])
-    elif sys.platform == "darwin":
-        subprocess.call(["brew", "install", "graphviz"])
-    elif sys.platform == "win32":
-        print("[!] Install Graphviz manually from https://graphviz.org/download/")
-        sys.exit(1)
+# === Load MITRE DB or fallback ===
+def load_mitre_db(path="data/local_mitre_db.json"):
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            return json.load(f)
+    return DEFAULT_MITRE_DB
 
-DEFAULT_TTP_MAP = {
-    "Execution": [
-        {"id": "T1059", "name": "Command & Scripting Interpreter", "next": ["T1053"]}
-    ],
-    "Persistence": [
-        {"id": "T1053", "name": "Scheduled Task/Job", "next": []}
-    ]
-}
-
-MITRE_CATEGORIES = ["Initial Access", "Execution", "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access", "Discovery", "Lateral Movement", "Collection", "Exfiltration", "Command and Control"]
-
-def load_ttp_map(path):
+# === Parse input detections ===
+def load_detections(path="results/telemetry_anomalies.json"):
     if not os.path.exists(path):
-        return DEFAULT_TTP_MAP
-    with open(path, 'r') as f:
-        return json.load(f)
+        return []
+    with open(path, "r") as f:
+        data = json.load(f)
+        return [entry.get("description", "T1059") for entry in data]  # fallback TTP
 
-def generate_graphviz_matrix(ttp_map, output_path):
-    dot = Digraph(comment='MITRE ATT&CK Matrix')
-    for phase, ttps in ttp_map.items():
-        for ttp in ttps:
-            node_id = f"{ttp['id']}"
-            dot.node(node_id, f"{ttp['id']}\n{ttp['name']}")
-            for n in ttp.get("next", []):
-                dot.edge(node_id, n)
-    dot.render(output_path, format='svg', cleanup=True)
+# === Build matrix ===
+def build_matrix(mitre_db, matches):
+    matrix = defaultdict(list)
+    for entry in mitre_db:
+        tech = entry["technique"]
+        tactic = entry["tactic"]
+        tid = entry["id"]
+        color = "red" if tid in matches else "gray"
+        matrix[tactic].append((tech, tid, color))
+    return matrix
 
-def generate_fallback_plot(ttp_map, output_path):
-    fig, ax = plt.subplots(figsize=(15, 8))
-    for i, cat in enumerate(MITRE_CATEGORIES):
-        ttps = ttp_map.get(cat, [])
-        for j, ttp in enumerate(ttps):
-            label = f"{ttp['id']}\n{ttp['name']}"
-            ax.text(i, -j, label, ha='center', va='center', fontsize=7, bbox=dict(boxstyle="round", facecolor='lightblue'))
-    ax.set_xlim(-1, len(MITRE_CATEGORIES))
-    ax.set_ylim(-10, 1)
-    ax.set_xticks(range(len(MITRE_CATEGORIES)))
-    ax.set_xticklabels(MITRE_CATEGORIES, rotation=45, ha='right')
+# === Plot MITRE SVG Matrix ===
+def plot_svg(matrix, output="results/mitre_matrix.svg"):
+    os.makedirs("results", exist_ok=True)
+    tactics = list(matrix.keys())
+    fig, ax = plt.subplots(figsize=(len(tactics) * 2, 6))
+
+    for col, tactic in enumerate(tactics):
+        ax.text(col + 0.5, len(matrix[tactic]) + 0.5, tactic, ha='center', va='bottom', fontsize=10, weight='bold')
+        for row, (tech, tid, color) in enumerate(matrix[tactic]):
+            rect = mpatches.Rectangle((col, len(matrix[tactic]) - row - 1), 1, 1, edgecolor='black', facecolor=color)
+            ax.add_patch(rect)
+            ax.text(col + 0.5, len(matrix[tactic]) - row - 0.5, tech, ha='center', va='center', fontsize=6)
+
+    ax.set_xlim(0, len(tactics))
+    ax.set_ylim(0, max(len(v) for v in matrix.values()))
     ax.axis('off')
+    plt.title("MITRE ATT&CK Matrix Mapping", fontsize=12)
     plt.tight_layout()
-    plt.savefig(output_path, bbox_inches='tight')
+    plt.savefig(output, format='svg')
     plt.close()
 
+# === Main Function ===
 def main():
-    os.makedirs("results", exist_ok=True)
-    ttp_data = load_ttp_map("input/ttp_map.json")
-    try:
-        generate_graphviz_matrix(ttp_data, "results/mitre_matrix")
-        print("[+] SVG matrix created at results/mitre_matrix.svg")
-    except Exception as e:
-        print(f"[!] Graphviz failed: {e}\n[!] Falling back to Matplotlib rendering")
-        generate_fallback_plot(ttp_data, "results/mitre_matrix_plot.png")
-        print("[+] PNG matrix created at results/mitre_matrix_plot.png")
+    mitre_db = load_mitre_db()
+    detections = load_detections()
+    matched_ids = set(detections)
+    matrix = build_matrix(mitre_db, matched_ids)
+    plot_svg(matrix)
+    print(f"[+] MITRE Matrix SVG saved to results/mitre_matrix.svg")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

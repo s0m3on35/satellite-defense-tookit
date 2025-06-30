@@ -1,97 +1,104 @@
 import os
-import json
-import argparse
-import hashlib
-import logging
 import re
-import yaml
+import json
+import time
+import argparse
 from datetime import datetime
 
 AGENT_ID = "firmware_backdoor_scanner"
 ALERT_FILE = "webgui/alerts.json"
-FEED_FILE = "webgui/live_feed.jsonl"
-BACKDOOR_SIGS = "config/firmware_backdoor_signatures.yaml"
-KILLCHAIN_FILE = "killchain.json"
-MITRE_FILE = "results/mitre_matrix.json"
+AGENTS_DB = "webgui/agents.json"
+RESULTS_DIR = "results"
+CHAIN_SCRIPT = "modules/report_builder.py"
 
-def setup_logging(log_path):
-    logging.basicConfig(
-        filename=log_path,
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
-    logging.getLogger().addHandler(logging.StreamHandler())
+PATTERNS = [
+    (r"(root:.*:0:0:)", "Suspicious /etc/passwd entry (root)"),
+    (r"(?i)(telnetd)", "Telnet service detected"),
+    (r"(?i)(backdoor)", "Backdoor keyword"),
+    (r"(admin:\w+:)", "Hardcoded admin credentials"),
+    (r"(?i)(remote_shell|debug_shell)", "Remote or debug shell"),
+    (r"(?i)(dropbear|busybox ash)", "Embedded shell or SSH variant")
+]
 
-def load_signatures():
-    with open(BACKDOOR_SIGS, "r") as f:
-        return yaml.safe_load(f)
+def log(msg):
+    print(f"[BACKDOOR] {msg}")
 
-def compute_hash(path):
-    h = hashlib.sha256()
-    with open(path, 'rb') as f:
-        while chunk := f.read(8192):
-            h.update(chunk)
-    return h.hexdigest()
-
-def scan_firmware(path, signatures):
-    hits = []
-    with open(path, 'rb') as f:
-        data = f.read()
-        for sig in signatures.get("byte_patterns", []):
-            pattern = bytes.fromhex(sig)
-            if pattern in data:
-                hits.append(f"HEX:{sig}")
-        text = data.decode(errors="ignore")
-        for keyword in signatures.get("strings", []):
-            if re.search(keyword, text):
-                hits.append(f"STR:{keyword}")
-    return hits
-
-def alert(path, matches):
-    timestamp = datetime.utcnow().isoformat()
-    alert_obj = {
-        "timestamp": timestamp,
+def push_alert(msg):
+    alert = {
         "agent": AGENT_ID,
-        "alert": "Firmware backdoor signature matched",
-        "matches": matches,
-        "file": path,
-        "mitre_id": "T1543.003",
-        "kill_chain_phase": "Persistence"
+        "alert": msg,
+        "type": "firmware",
+        "timestamp": time.time()
     }
-
-    os.makedirs("results", exist_ok=True)
     with open(ALERT_FILE, "a") as f:
-        f.write(json.dumps(alert_obj) + "\n")
+        f.write(json.dumps(alert) + "\n")
 
-    with open(FEED_FILE, "a") as f:
-        f.write(json.dumps(alert_obj) + "\n")
+def register_agent():
+    os.makedirs(os.path.dirname(AGENTS_DB), exist_ok=True)
+    if not os.path.exists(AGENTS_DB):
+        with open(AGENTS_DB, "w") as f:
+            json.dump([], f)
+    with open(AGENTS_DB, "r") as f:
+        agents = json.load(f)
+    if AGENT_ID not in [a["id"] for a in agents]:
+        agents.append({
+            "id": AGENT_ID,
+            "type": "firmware",
+            "registered": datetime.now().isoformat()
+        })
+        with open(AGENTS_DB, "w") as f:
+            json.dump(agents, f, indent=2)
 
-    with open(KILLCHAIN_FILE, "a") as f:
-        f.write(json.dumps({
-            "timestamp": timestamp,
-            "phase": "Persistence - Backdoor Found",
-            "details": alert_obj
-        }) + "\n")
+def scan_firmware(directory):
+    findings = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            full_path = os.path.join(root, file)
+            try:
+                with open(full_path, "rb") as f:
+                    content = f.read().decode(errors="ignore")
+                    for pattern, desc in PATTERNS:
+                        if re.search(pattern, content):
+                            findings.append({
+                                "timestamp": datetime.now().isoformat(),
+                                "file": full_path,
+                                "pattern": pattern,
+                                "description": desc
+                            })
+            except:
+                continue
+    return findings
 
-    with open(MITRE_FILE, "w") as f:
-        json.dump({"T1543.003": "Firmware persistence backdoor"}, f, indent=2)
+def export_results(findings):
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    path = os.path.join(RESULTS_DIR, "firmware_backdoor_findings.json")
+    with open(path, "w") as f:
+        json.dump(findings, f, indent=4)
+    return path
 
-def main(args):
-    setup_logging(args.log)
-    sigs = load_signatures()
-    for fname in os.listdir(args.fwdir):
-        if fname.endswith(".bin") or fname.endswith(".img"):
-            path = os.path.join(args.fwdir, fname)
-            matches = scan_firmware(path, sigs)
-            if matches:
-                alert(path, matches)
-                logging.warning(f"Backdoor detected in {fname}")
-            else:
-                logging.info(f"No issues in {fname}")
+def chain_reporter():
+    os.system(f"python3 {CHAIN_SCRIPT} --source firmware_backdoor_findings.json")
+
+def main():
+    parser = argparse.ArgumentParser(description="Firmware Backdoor Scanner")
+    parser.add_argument("--input", required=True, help="Unpacked firmware directory")
+    args = parser.parse_args()
+
+    register_agent()
+    push_alert("Backdoor scan started")
+    log("Scanning for hardcoded credentials and backdoors")
+
+    findings = scan_firmware(args.input)
+
+    if findings:
+        push_alert(f"{len(findings)} suspicious pattern(s) found")
+        log(f"{len(findings)} potential backdoors detected")
+    else:
+        log("No suspicious patterns found")
+        push_alert("Scan complete: no issues")
+
+    export_results(findings)
+    chain_reporter()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Firmware Backdoor Pattern Matcher")
-    parser.add_argument("--fwdir", default="firmware_samples", help="Firmware sample directory")
-    parser.add_argument("--log", default="logs/backdoor_scan.log", help="Log file path")
-    args = parser.parse_args()
-    main(args)
+    main()

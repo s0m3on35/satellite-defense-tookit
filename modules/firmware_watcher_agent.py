@@ -1,71 +1,51 @@
-
-import argparse
-import hashlib
-import os
-import time
-import logging
-import yaml
+import argparse, hashlib, os, time, json, requests
 from datetime import datetime
 
-# === Config & Logging ===
-def load_config(path):
-    with open(path, 'r') as f:
-        return yaml.safe_load(f)
+CONFIG_PATH = "modules/config/config.yaml"
+LOG_PATH = "logs/firmware_watcher.log"
+ALERT_FILE = "webgui/alerts.json"
+WEBHOOK = "http://127.0.0.1:9999/alert"
+FIRMWARE_FILE = "modules/data/test_firmware.bin"
+EXPECTED_HASH = "43ce11496e4375e5dcbcf9b75b82b8c3d9dad3f61ae8c9007f10d5b735545365"
+INTERVAL = 10
+ALGO = "sha256"
+AGENT_ID = "firmware_watcher"
 
-def setup_logging(log_path):
-    logging.basicConfig(
-        filename=log_path,
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
-    logging.getLogger().addHandler(logging.StreamHandler())
-
-# === Core Logic ===
-def compute_hash(filepath, algo='sha256'):
-    h = hashlib.new(algo)
+def compute_hash(filepath):
+    h = hashlib.new(ALGO)
     with open(filepath, 'rb') as f:
         while chunk := f.read(8192):
             h.update(chunk)
     return h.hexdigest()
 
-def monitor_firmware(file_path, expected_hash, interval, algo):
-    logging.info(f"Monitoring firmware at {file_path} every {interval}s")
+def push_alert(info):
+    data = {
+        "agent": AGENT_ID,
+        "timestamp": datetime.utcnow().isoformat(),
+        "alert": "FIRMWARE_TAMPER_DETECTED",
+        "details": info,
+        "type": "firmware"
+    }
+    with open(ALERT_FILE, "a") as f:
+        f.write(json.dumps(data) + "\n")
+    try:
+        requests.post(WEBHOOK, json=data, timeout=3)
+    except:
+        pass
+
+def monitor():
     while True:
-        if not os.path.exists(file_path):
-            logging.warning("Firmware file not found!")
-        else:
-            hash_now = compute_hash(file_path, algo)
-            logging.info(f"Current {algo} hash: {hash_now}")
-            if hash_now != expected_hash:
+        if os.path.exists(FIRMWARE_FILE):
+            current_hash = compute_hash(FIRMWARE_FILE)
+            if current_hash != EXPECTED_HASH:
                 alert = {
-                    "timestamp": datetime.now().isoformat(),
-                    "file": file_path,
-                    "expected": expected_hash,
-                    "found": hash_now,
-                    "alert": "HASH_MISMATCH"
+                    "expected": EXPECTED_HASH,
+                    "found": current_hash,
+                    "file": FIRMWARE_FILE
                 }
-                os.makedirs("results", exist_ok=True)
-                with open("results/firmware_alert.json", "w") as f:
-                    f.write(str(alert))
-                logging.error("Firmware hash mismatch! Potential tampering.")
+                push_alert(alert)
                 break
-        time.sleep(interval)
-
-# === Main ===
-def main(args):
-    config = load_config(args.config)
-    setup_logging(args.log)
-
-    firmware_file = config['firmware_path']
-    expected_hash = config['expected_hash']
-    interval = config.get('interval', 10)
-    algo = config.get('hash_algo', 'sha256')
-
-    monitor_firmware(firmware_file, expected_hash, interval, algo)
+        time.sleep(INTERVAL)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Firmware Watcher Agent")
-    parser.add_argument("--config", default="config/config.yaml", help="Path to YAML config")
-    parser.add_argument("--log", default="logs/firmware_watcher.log", help="Log file path")
-    args = parser.parse_args()
-    main(args)
+    monitor()

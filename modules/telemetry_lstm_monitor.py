@@ -125,7 +125,7 @@ def export_report(alerts):
             f.write(f"- **Time**: {alert['timestamp']} | **Point**: {alert['point_id']} | **Value**: {alert['value']:.2f} | **Z**: {alert['z_score']:.2f}\n")
 
 def enrich_with_ttp(alert):
-    alert["mapped_ttp"] = "T1046"  # Example mapping
+    alert["mapped_ttp"] = "T1046"
     alert["kill_chain"] = "collection"
     return alert
 
@@ -136,10 +136,15 @@ def main(args):
 
     telemetry_data = simulate_telemetry_stream()
 
-    if config.get("method", "zscore") == "lstm":
-        anomalies, z_scores = detect_anomalies_lstm(telemetry_data, config.get("look_back", 10), config.get("threshold", 2.0))
+    threshold = config.get("threshold", 3.0)
+    method = config.get("method", "zscore")
+    look_back = config.get("look_back", 10)
+    ws_url = config.get("ws_url", "ws://localhost:8765")
+
+    if method == "lstm":
+        anomalies, z_scores = detect_anomalies_lstm(telemetry_data, look_back, threshold)
     else:
-        anomalies, z_scores = detect_anomalies_zscore(telemetry_data, config.get("threshold", 3.0))
+        anomalies, z_scores = detect_anomalies_zscore(telemetry_data, threshold)
 
     os.makedirs("results", exist_ok=True)
     alert_log = []
@@ -155,7 +160,7 @@ def main(args):
             alert = enrich_with_ttp(alert)
             alert_log.append(alert)
             log_to_agent_inventory(alert)
-            send_ws_alert(config.get("ws_url", "ws://localhost:8765"), alert)
+            send_ws_alert(ws_url, alert)
 
     with open("results/telemetry_anomalies.json", "w") as f:
         json.dump(alert_log, f, indent=4)

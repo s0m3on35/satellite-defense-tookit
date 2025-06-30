@@ -16,11 +16,6 @@
 | `telemetry_lstm_monitor.py` | Identifies anomalies in satellite telemetry with LSTM models |
 | `satellite_defense_toolkit_launcher.py` | Main interactive menu and logging dashboard |
 
----
-
-## Architecture
-
-![Architecture](docs/wiki/architecture.png)
 
 ---
 

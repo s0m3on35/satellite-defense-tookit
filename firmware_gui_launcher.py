@@ -1,6 +1,3 @@
-# firmware_gui_launcher.py
-# Military-grade GUI Controller for Firmware STIX/PCAP/Anomaly Tools
-
 import tkinter as tk
 from tkinter import filedialog, scrolledtext
 import subprocess

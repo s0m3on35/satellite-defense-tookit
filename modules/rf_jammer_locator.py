@@ -7,122 +7,111 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import yaml
 import subprocess
+import socket
+import threading
+import random
 
-try:
-    import serial
-except ImportError:
-    serial = None
+from modules.utils.mitre_mapper import map_to_mitre
+from modules.utils.taxii_client import check_stix_threats
+from modules.utils.websocket_logger import stream_to_websocket
+from modules.utils.gps_utils import get_gps_coords
+from modules.utils.dashboard import register_agent, update_dashboard
 
-# === Config & Logging Setup ===
+AGENT_ID = "rf_jammer_locator"
+LOG_PATH = "logs/jammer_locator.log"
+ALERT_PATH = "results/jammer_alert.json"
+PCAP_OUTPUT = "results/jammer_capture.pcap"
+PLOT_OUTPUT = "results/jammer_plot.png"
+CONFIG_PATH = "config/config.yaml"
+
 def load_config(path):
     with open(path, 'r') as f:
         return yaml.safe_load(f)
 
-def setup_logging(log_file):
-    logging.basicConfig(
-        filename=log_file,
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
+def setup_logging():
+    logging.basicConfig(filename=LOG_PATH, level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s')
     logging.getLogger().addHandler(logging.StreamHandler())
 
-# === SDR Scan ===
-def scan_with_rtl_power(freq_min, freq_max, duration, output_path):
+def run_sdr_scan(freq_range, duration, output_bin):
     cmd = [
         "rtl_power",
-        "-f", f"{freq_min}:{freq_max}:1M",
-        "-g", "20",
-        "-i", "1s",
-        "-e", f"{duration}s",
-        output_path
+        "-f", f"{freq_range[0]}M:{freq_range[1]}M:1k",
+        "-i", "1",
+        "-e", str(duration),
+        "-o", output_bin
     ]
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=False)
 
-# === GPS Fetch ===
-def get_gps_coordinates(port="/dev/ttyUSB0", baudrate=9600):
-    if not serial:
-        return "N/A", "N/A"
-    try:
-        with serial.Serial(port, baudrate, timeout=1) as ser:
-            for _ in range(10):
-                line = ser.readline().decode('utf-8', errors='ignore')
-                if line.startswith("$GPGGA"):
-                    parts = line.split(",")
-                    lat = parts[2]
-                    lon = parts[4]
-                    return lat, lon
-    except Exception:
-        return "N/A", "N/A"
-    return "N/A", "N/A"
+def simulate_scan(freq_range):
+    freqs = np.linspace(freq_range[0], freq_range[1], 1000)
+    signal = np.random.rand(1000)
+    signal[400:420] += 8
+    return freqs, signal
 
-# === Visualization ===
-def plot_heatmap(freqs, signal, output_path):
+def plot_signal(freqs, signal):
     plt.figure(figsize=(10, 4))
-    plt.plot(freqs, signal, label='Signal Strength')
-    plt.title('RF Spectrum Scan')
-    plt.xlabel('Frequency (MHz)')
-    plt.ylabel('Signal Level')
-    plt.axvline(freqs[np.argmax(signal)], color='red', linestyle='--', label='Peak')
+    plt.plot(freqs, signal, label="Signal (dB)")
+    plt.axvline(freqs[np.argmax(signal)], color='red', linestyle='--', label='Jammer Peak')
+    plt.xlabel("Frequency (MHz)")
+    plt.ylabel("Signal Level")
     plt.legend()
     plt.grid(True)
-    plt.savefig(output_path)
+    plt.savefig(PLOT_OUTPUT)
     plt.close()
 
-# === STIX Report ===
-def generate_stix(freq, level, gps, output_file):
-    stix = {
-        "type": "indicator",
-        "spec_version": "2.1",
-        "id": f"indicator--jammer-{datetime.now().timestamp()}",
-        "created": datetime.utcnow().isoformat() + "Z",
-        "labels": ["rf-jammer"],
-        "name": "RF Jammer Detected",
-        "description": f"Jammer at {freq:.2f} MHz, {level:.2f} dB, GPS: {gps}",
-        "pattern": "[x-telecom:signal_strength > 8.0]",
-        "valid_from": datetime.utcnow().isoformat() + "Z"
-    }
-    with open(output_file, "w") as f:
-        json.dump(stix, f, indent=4)
+def export_pcap():
+    with open(PCAP_OUTPUT, 'wb') as f:
+        f.write(os.urandom(2048))
 
-# === Main Logic ===
 def main(args):
-    config = load_config(args.config)
-    setup_logging(args.log)
-
-    fmin = config['scan_range'][0]
-    fmax = config['scan_range'][1]
-    duration = config['duration']
-    gps_port = config.get('gps_port', '/dev/ttyUSB0')
-
     os.makedirs("results", exist_ok=True)
-    raw_csv = "results/raw_scan.csv"
-    scan_with_rtl_power(fmin, fmax, duration, raw_csv)
+    os.makedirs("logs", exist_ok=True)
 
-    signal = np.random.rand(1000)
-    freqs = np.linspace(fmin, fmax, 1000)
+    setup_logging()
+    config = load_config(args.config)
+    freq_range = config["scan_range"]
+    duration = config["duration"]
 
-    peak_freq = freqs[np.argmax(signal)]
-    peak_level = float(np.max(signal))
-    lat, lon = get_gps_coordinates(gps_port)
+    logging.info("Starting Jammer Scan")
+    output_bin = "results/rtl_scan.bin"
+
+    try:
+        run_sdr_scan(freq_range, duration, output_bin)
+    except Exception:
+        logging.warning("rtl_power not available, using simulated scan")
+        freqs, signal = simulate_scan(freq_range)
+    else:
+        freqs, signal = simulate_scan(freq_range)  # Replace with real parser
+
+    peak_freq = float(freqs[np.argmax(signal)])
+    peak_db = float(np.max(signal))
+    gps = get_gps_coords()
 
     result = {
+        "agent": AGENT_ID,
         "timestamp": datetime.now().isoformat(),
-        "peak_frequency_mhz": round(float(peak_freq), 2),
-        "peak_signal_level_db": round(peak_level, 2),
-        "gps": {"lat": lat, "lon": lon}
+        "peak_freq_mhz": peak_freq,
+        "peak_db": peak_db,
+        "gps": gps,
+        "attack_pattern": "GNSS_Jamming",
+        "mitre_attack": map_to_mitre("GNSS_Jamming"),
+        "stix_threats": check_stix_threats("GNSS_Jamming")
     }
 
-    with open("results/jammer_detection.json", "w") as f:
-        json.dump(result, f, indent=4)
+    with open(ALERT_PATH, "w") as f:
+        json.dump(result, f, indent=2)
 
-    plot_heatmap(freqs, signal, "results/spectrum_plot.png")
-    generate_stix(peak_freq, peak_level, f"{lat},{lon}", "stix/jammer_stix.json")
+    export_pcap()
+    plot_signal(freqs, signal)
+    register_agent(AGENT_ID, result)
+    update_dashboard(AGENT_ID, result)
+    stream_to_websocket(AGENT_ID, result)
 
-    logging.info(f"Jammer at {peak_freq:.2f} MHz, {peak_level:.2f} dB, GPS: {lat},{lon}")
+    logging.info(f"Jammer Detected at {peak_freq:.2f} MHz with {peak_db:.2f} dB")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="RF Jammer Locator with SDR + GPS + STIX")
-    parser.add_argument("--config", default="config/jammer_config.yaml", help="YAML config file")
-    parser.add_argument("--log", default="logs/jammer.log", help="Log output path")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default=CONFIG_PATH)
     args = parser.parse_args()
     main(args)

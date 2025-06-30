@@ -1,110 +1,84 @@
-import argparse
 import os
 import logging
-import datetime
-import json
 import subprocess
-from scapy.all import sniff, wrpcap, Raw
-from collections import Counter
-import websocket
+import datetime
+import pyshark  # or scapy
+import yara
 
-# === CONFIG & LOGGING ===
-def setup_logging(log_file):
+# === Setup ===
+LOG_FILE = "logs/firmware_pcap.log"
+RESULTS_DIR = "results"
+PCAP_DIR = "pcap_samples"
+FIRMWARE_DUMP = "results/extracted_from_pcap.bin"
+
+def setup_logging():
+    os.makedirs("logs", exist_ok=True)
     logging.basicConfig(
-        filename=log_file,
+        filename=LOG_FILE,
         level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(levelname)s - %(message)s"
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
-# === LIVE WEBSOCKET STREAMING ===
-def stream_ws_dashboard(event, data):
+# === Extract payload from PCAP (simple example) ===
+def extract_payload(pcap_file, output_file):
     try:
-        ws = websocket.create_connection("ws://localhost:8080/ws/metrics")
-        ws.send(json.dumps({"event": event, "data": data}))
-        ws.close()
-    except Exception as e:
-        logging.warning(f"WebSocket stream failed: {e}")
-
-# === PCAP SIGNATURE MATCHING ===
-def check_signatures(packets):
-    sig_hits = []
-    ioc_keywords = [b'telnet', b'dropbear', b'reverse', b'cmd.exe', b'/bin/sh']
-    for pkt in packets:
-        if pkt.haslayer(Raw):
-            payload = pkt[Raw].load.lower()
-            for sig in ioc_keywords:
-                if sig in payload:
-                    sig_hits.append(sig.decode())
-    return list(set(sig_hits))
-
-# === CAPTURE ===
-def capture_packets(interface, duration, output_dir):
-    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    pcap_file = os.path.join(output_dir, f"firmware_capture_{ts}.pcap")
-    logging.info(f"Capturing on {interface} for {duration}s")
-    packets = sniff(iface=interface, timeout=duration)
-    wrpcap(pcap_file, packets)
-    logging.info(f"Saved {len(packets)} packets to {pcap_file}")
-    return pcap_file, packets
-
-# === SURICATA / ZEEK ===
-def run_suricata(pcap_path, output_dir):
-    try:
-        os.makedirs(output_dir, exist_ok=True)
-        subprocess.run(["suricata", "-r", pcap_path, "-l", output_dir], check=True)
-        alert_path = os.path.join(output_dir, "fast.log")
-        if os.path.exists(alert_path):
-            with open(alert_path, 'r') as f:
-                alerts = f.read()
-                logging.info(f"Suricata alerts:\n{alerts}")
-                return alerts
-    except Exception as e:
-        logging.warning(f"Suricata failed: {e}")
-    return ""
-
-def run_zeek(pcap_path, output_dir):
-    try:
-        os.makedirs(output_dir, exist_ok=True)
-        subprocess.run(["zeek", "-r", pcap_path], cwd=output_dir, check=True)
+        cap = pyshark.FileCapture(pcap_file, display_filter="data")
+        with open(output_file, 'wb') as f:
+            for pkt in cap:
+                if hasattr(pkt, 'data'):
+                    raw = bytes.fromhex(pkt.data.data.replace(':', ''))
+                    f.write(raw)
+        logging.info(f"Payload extracted to {output_file}")
         return True
     except Exception as e:
-        logging.warning(f"Zeek failed: {e}")
+        logging.error(f"Payload extraction failed: {e}")
         return False
 
-# === MAIN ===
-def main(args):
-    os.makedirs(args.output, exist_ok=True)
-    setup_logging(args.log)
+# === YARA Scan ===
+def yara_scan(file_path, rules_path="rules/firmware_rules.yar"):
+    try:
+        rules = yara.compile(filepath=rules_path)
+        matches = rules.match(file_path)
+        if matches:
+            logging.warning(f"YARA match: {matches}")
+            return True
+        return False
+    except Exception as e:
+        logging.error(f"YARA scan error: {e}")
+        return False
 
-    pcap_file, packets = capture_packets(args.interface, args.duration, args.output)
+# === Chain to STIX Export ===
+def chain_to_stix(firmware_file):
+    try:
+        subprocess.run([
+            "python3",
+            "modules/firmware/firmware_stix_export.py",
+            "--firmware", firmware_file,
+            "--dashboard",
+            "--log", "logs/firmware_stix.log"
+        ], check=True)
+        logging.info("STIX export module successfully chained.")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"STIX export failed: {e}")
 
-    # === PCAP Signature Match
-    sigs = check_signatures(packets)
-    stream_ws_dashboard("signature_alerts", {"matches": sigs})
-
-    # === Protocol distribution
-    protocols = [pkt.name for pkt in packets]
-    proto_count = dict(Counter(protocols))
-    stream_ws_dashboard("protocol_distribution", proto_count)
-
-    # === Suricata & Zeek
-    alerts = run_suricata(pcap_file, args.output + "/suricata")
-    stream_ws_dashboard("suricata_alerts", {"alerts": alerts})
-
-    zeek_ok = run_zeek(pcap_file, args.output + "/zeek")
-    stream_ws_dashboard("zeek_status", {"result": "success" if zeek_ok else "failure"})
-
-    # === Trigger Correlation Engine
-    subprocess.run(["python3", "modules/firmware/firmware_stix_export.py",
-                    "--firmware", pcap_file,
-                    "--log", "logs/firmware_stix_from_pcap.log"], check=False)
+# === Main ===
+def process_pcap(pcap_file):
+    logging.info(f"Processing PCAP: {pcap_file}")
+    if extract_payload(pcap_file, FIRMWARE_DUMP):
+        if yara_scan(FIRMWARE_DUMP):
+            chain_to_stix(FIRMWARE_DUMP)
+        else:
+            logging.info("No YARA anomalies detected.")
+    else:
+        logging.info("No valid payload extracted.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Enhanced Firmware PCAP Capture & Analysis")
-    parser.add_argument("--interface", default="eth0", help="Capture interface")
-    parser.add_argument("--duration", type=int, default=30, help="Duration in seconds")
-    parser.add_argument("--output", default="results", help="Output dir")
-    parser.add_argument("--log", default="logs/firmware_pcap_export.log", help="Log file path")
-    args = parser.parse_args()
-    main(args)
+    setup_logging()
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    os.makedirs(PCAP_DIR, exist_ok=True)
+
+    # Example: scan all pcap files in folder
+    for file in os.listdir(PCAP_DIR):
+        if file.endswith(".pcap"):
+            process_pcap(os.path.join(PCAP_DIR, file))

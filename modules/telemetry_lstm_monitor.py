@@ -1,4 +1,3 @@
-
 import argparse
 import logging
 import yaml
@@ -8,7 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-# === Config & Logging ===
 def load_config(path):
     with open(path, 'r') as f:
         return yaml.safe_load(f)
@@ -21,7 +19,6 @@ def setup_logging(log_file):
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
-# === Simulated LSTM Monitoring ===
 def simulate_telemetry_stream(n_points=150):
     normal = np.random.normal(0, 1, (n_points, 1))
     anomaly = np.random.normal(5, 0.5, (10, 1))
@@ -44,7 +41,6 @@ def plot_anomalies(data, anomalies, output_path):
     plt.savefig(output_path)
     plt.close()
 
-# === Main ===
 def main(args):
     config = load_config(args.config)
     setup_logging(args.log)

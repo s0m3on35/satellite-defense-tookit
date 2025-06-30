@@ -1,16 +1,13 @@
-
-
-#!/usr/bin/env python3
 import argparse
 import logging
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import json
-import yaml
-import socket
-import time
 from datetime import datetime
+import yaml
+import json
+import socket
+import subprocess
 from sklearn.ensemble import IsolationForest
 from scipy.stats import entropy
 
@@ -19,7 +16,6 @@ def load_config(path):
         return yaml.safe_load(f)
 
 def setup_logging(log_file):
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
     logging.basicConfig(
         filename=log_file,
         level=logging.INFO,
@@ -27,79 +23,102 @@ def setup_logging(log_file):
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
-def simulate_rf_scan(freq_range, duration):
-    freqs = np.linspace(freq_range[0], freq_range[1], 1000)
-    signal = np.random.rand(1000)
-    signal[400:420] += 8
-    entropy_val = entropy(np.histogram(signal, bins=10, density=True)[0])
-    return freqs, signal, entropy_val
+def simulate_or_real_scan(freq_range, use_real=False, output_csv=None):
+    if use_real and output_csv:
+        subprocess.run([
+            "rtl_power", "-f", f"{freq_range[0]}M:{freq_range[1]}M:1M", 
+            "-g", "20", "-i", "1", "-e", "10s", "-c", "20", "-o", output_csv
+        ])
+        data = np.loadtxt(output_csv, delimiter=',', skiprows=1)
+        freqs = data[:, 0]
+        signal = data[:, 1]
+    else:
+        freqs = np.linspace(freq_range[0], freq_range[1], 1000)
+        signal = np.random.rand(1000)
+        signal[400:420] += 8
+    return freqs, signal
+
+def analyze_entropy(signal):
+    hist, _ = np.histogram(signal, bins=50, density=True)
+    return entropy(hist)
+
+def fingerprint(signal):
+    return list(np.round(signal[:50], 2))
 
 def detect_anomalies(signal):
-    clf = IsolationForest(n_estimators=100, contamination=0.05, random_state=42)
-    preds = clf.fit_predict(signal.reshape(-1, 1))
-    return preds
+    clf = IsolationForest(n_estimators=100, contamination=0.01, random_state=42)
+    signal_reshaped = np.array(signal).reshape(-1, 1)
+    preds = clf.fit_predict(signal_reshaped)
+    scores = clf.decision_function(signal_reshaped)
+    return preds, scores
 
-def plot_heatmap(freqs, signal, anomalies, output_path):
-    plt.figure(figsize=(12, 5))
+def plot_scan(freqs, signal, output_path):
+    plt.figure(figsize=(10, 4))
     plt.plot(freqs, signal, label='Signal Strength (dB)')
-    plt.scatter(freqs[anomalies == -1], signal[anomalies == -1], color='red', label='Anomalies')
-    plt.axvline(freqs[np.argmax(signal)], color='black', linestyle='--', label='Peak')
-    plt.title('RF Jammer Detection')
+    plt.axvline(freqs[np.argmax(signal)], color='red', linestyle='--', label='Jammer Peak')
+    plt.title('RF Spectrum Scan')
     plt.xlabel('Frequency (MHz)')
-    plt.ylabel('Signal Strength')
+    plt.ylabel('Signal Level')
     plt.legend()
     plt.grid(True)
-    plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
 
-def export_json(result, path):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'w') as f:
-        json.dump(result, f, indent=4)
-
-def websocket_alert(host, port, data):
+def send_websocket_alert(data, ws_host="localhost", ws_port=8765):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, port))
-        s.send(json.dumps(data).encode())
+        s.connect((ws_host, ws_port))
+        s.sendall((json.dumps(data) + "\n").encode())
         s.close()
-    except:
-        pass
+    except Exception as e:
+        logging.warning(f"WebSocket alert failed: {e}")
 
 def main(args):
     config = load_config(args.config)
     setup_logging(args.log)
-    logging.info("RF Jammer Locator (Advanced Mode) Started")
 
     freq_range = config['scan_range']
     duration = config['duration']
-    ws_host = config.get('websocket_host', 'localhost')
-    ws_port = config.get('websocket_port', 8765)
+    use_real = config.get('use_real_sdr', False)
 
-    freqs, signal, entropy_val = simulate_rf_scan(freq_range, duration)
-    peak_freq = float(freqs[np.argmax(signal)])
+    freqs, signal = simulate_or_real_scan(freq_range, use_real, config.get('sdr_output_csv'))
+
+    peak_freq = freqs[np.argmax(signal)]
     peak_level = float(np.max(signal))
-    anomalies = detect_anomalies(signal)
+    entropy_val = analyze_entropy(signal)
+    fingerprint_val = fingerprint(signal)
+    preds, scores = detect_anomalies(signal)
+
+    os.makedirs("results", exist_ok=True)
 
     result = {
         "timestamp": datetime.now().isoformat(),
-        "peak_frequency_mhz": peak_freq,
+        "peak_frequency_mhz": float(peak_freq),
         "peak_signal_level": peak_level,
-        "entropy": entropy_val,
-        "anomaly_indices": np.where(anomalies == -1)[0].tolist()
+        "entropy": float(entropy_val),
+        "fingerprint": fingerprint_val,
+        "alerts": int(sum(np.array(preds) == -1))
     }
 
-    export_json(result, "results/jammer_detection.json")
-    plot_heatmap(freqs, signal, anomalies, "results/jammer_scan_plot.png")
-    websocket_alert(ws_host, ws_port, result)
+    with open("results/jammer_detection.json", "w") as f:
+        json.dump(result, f, indent=4)
 
-    logging.info(f"Detected jammer at {peak_freq:.2f} MHz, entropy={entropy_val:.3f}")
-    logging.info("Results saved to results/")
+    np.savez("results/jammer_signal_snapshot.npz", freqs=freqs, signal=signal)
+    plot_scan(freqs, signal, "results/jammer_scan_plot.png")
+
+    send_websocket_alert({
+        "agent": "rf_jammer_locator",
+        "type": "rf",
+        "alert": f"Jammer at {peak_freq:.2f} MHz, {peak_level:.2f} dB",
+        "entropy": entropy_val,
+        "timestamp": result["timestamp"]
+    })
+
+    logging.info(f"Jammer detected at {peak_freq:.2f} MHz with signal {peak_level:.2f} dB")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="RF Jammer Locator - Advanced")
-    parser.add_argument("--config", default="config/config.yaml", help="YAML config file")
-    parser.add_argument("--log", default="logs/rf_jammer.log", help="Log file path")
+    parser = argparse.ArgumentParser(description="Advanced RF Jammer Locator")
+    parser.add_argument("--config", default="config/config.yaml", help="Path to YAML config")
+    parser.add_argument("--log", default="logs/jammer_locator.log", help="Log file path")
     args = parser.parse_args()
     main(args)

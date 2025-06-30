@@ -2,15 +2,16 @@
 import argparse
 import logging
 import os
+import json
+import yaml
 import numpy as np
 import matplotlib.pyplot as plt
-import json
 from datetime import datetime
-import yaml
+from sklearn.ensemble import IsolationForest
 from scipy.stats import entropy
-from sklearn.cluster import DBSCAN
+from scipy.io import wavfile
+import socket
 
-# === Config & Logging Setup ===
 def load_config(path):
     with open(path, 'r') as f:
         return yaml.safe_load(f)
@@ -23,100 +24,93 @@ def setup_logging(log_file):
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
-# === SDR Jammer Scan Simulation ===
-def simulate_sdr_scan(freq_range, duration):
-    freqs = np.linspace(freq_range[0], freq_range[1], 1000)
-    signal = np.random.normal(0, 1, 1000)
-    signal[400:420] += 8
+def simulate_sdr_signal(freq_range):
+    freqs = np.linspace(freq_range[0], freq_range[1], 1024)
+    signal = np.random.normal(0, 0.5, 1024)
+    signal[420:440] += np.random.normal(12, 2, 20)
     return freqs, signal
 
-# === Entropy Calculation ===
-def calculate_entropy(signal):
-    hist, _ = np.histogram(signal, bins=50, density=True)
-    return entropy(hist + 1e-8)
+def compute_entropy(signal):
+    hist, _ = np.histogram(signal, bins=64)
+    hist = hist + 1e-6
+    return float(entropy(hist, base=2))
 
-# === Clustering for Jamming Zones ===
-def cluster_signal(signal, eps=0.5, min_samples=5):
-    reshaped = signal.reshape(-1, 1)
-    model = DBSCAN(eps=eps, min_samples=min_samples)
-    return model.fit_predict(reshaped)
+def detect_anomalies(signal, contamination):
+    clf = IsolationForest(n_estimators=150, contamination=contamination, random_state=42)
+    scores = clf.fit_predict(signal.reshape(-1, 1))
+    return scores
 
-# === Plotting ===
-def plot_heatmap(freqs, signal, path):
-    plt.figure(figsize=(10, 4))
-    plt.plot(freqs, signal, label='Signal Strength (dB)')
-    plt.axvline(freqs[np.argmax(signal)], color='red', linestyle='--', label='Jammer Peak')
-    plt.title('SDR Frequency Scan')
-    plt.xlabel('Frequency (MHz)')
-    plt.ylabel('Signal Level')
+def export_plot(freqs, signal, anomalies, output_path):
+    plt.figure(figsize=(12, 4))
+    plt.plot(freqs, signal, label="Signal (dB)")
+    plt.scatter(freqs[anomalies == -1], signal[anomalies == -1], color='red', label="Anomalies")
+    plt.axvline(freqs[np.argmax(signal)], color='magenta', linestyle='--', label="Jammer Peak")
+    plt.xlabel("Frequency (MHz)")
+    plt.ylabel("Power Level")
     plt.grid(True)
     plt.legend()
-    plt.savefig(path)
+    plt.savefig(output_path)
     plt.close()
 
-def plot_entropy_histogram(signal, path):
-    hist, bins = np.histogram(signal, bins=50)
-    plt.figure(figsize=(10, 4))
-    plt.bar(bins[:-1], hist, width=np.diff(bins), edgecolor="black", align="edge")
-    plt.title('Signal Entropy Histogram')
-    plt.xlabel('Signal Level')
-    plt.ylabel('Frequency')
-    plt.savefig(path)
-    plt.close()
+def export_wav(signal, path):
+    normalized = np.int16((signal / np.max(np.abs(signal))) * 32767)
+    wavfile.write(path, 44100, normalized)
 
-# === Output Chaining ===
-def export_json(result, path):
-    with open(path, 'w') as f:
-        json.dump(result, f, indent=4)
+def export_pcap_stub(signal, path):
+    with open(path, "wb") as f:
+        f.write(b"PCAP_PLACEHOLDER_START")
+        f.write(signal.tobytes())
+        f.write(b"PCAP_PLACEHOLDER_END")
 
-def create_placeholder_pcap(path):
-    with open(path, 'wb') as f:
-        f.write(b'\xd4\xc3\xb2\xa1')  # Magic number for PCAP global header
+def send_websocket_alert(result, ws_host, ws_port):
+    try:
+        payload = json.dumps(result)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((ws_host, ws_port))
+        sock.sendall(payload.encode())
+        sock.close()
+    except Exception as e:
+        logging.error(f"WebSocket alert failed: {e}")
 
-# === Main Execution ===
 def main(args):
     config = load_config(args.config)
     setup_logging(args.log)
 
-    freq_range = config['scan_range']
-    duration = config['duration']
-
-    freqs, signal = simulate_sdr_scan(freq_range, duration)
-    peak_freq = freqs[np.argmax(signal)]
-    peak_level = float(np.max(signal))
-    entropy_score = calculate_entropy(signal)
-    clusters = cluster_signal(signal)
+    freqs, signal = simulate_sdr_signal(config["scan_range"])
+    anomalies = detect_anomalies(signal, config.get("contamination", 0.05))
+    entropy_val = compute_entropy(signal)
+    peak_freq = float(freqs[np.argmax(signal)])
+    peak_db = float(np.max(signal))
 
     os.makedirs("results", exist_ok=True)
+    timestamp = datetime.now().isoformat()
 
     result = {
-        "timestamp": datetime.now().isoformat(),
-        "peak_frequency_mhz": float(peak_freq),
-        "peak_signal_level": peak_level,
-        "signal_entropy": entropy_score,
-        "cluster_labels": clusters.tolist()
+        "timestamp": timestamp,
+        "peak_freq_mhz": peak_freq,
+        "peak_db": peak_db,
+        "entropy": entropy_val,
+        "anomalies_detected": int(np.sum(anomalies == -1)),
+        "uuid": f"jammer-{int(time.time())}"
     }
 
-    export_json(result, "results/jammer_detection.json")
-    plot_heatmap(freqs, signal, "results/jammer_scan_plot.png")
-    plot_entropy_histogram(signal, "results/jammer_entropy_hist.png")
-    create_placeholder_pcap("results/jammer_capture.pcap")
+    json_path = f"results/jammer_{int(time.time())}.json"
+    with open(json_path, "w") as f:
+        json.dump(result, f, indent=4)
 
-    alert = {
-        "agent": "rf_jammer_locator",
-        "type": "rf",
-        "alert": f"Jammer peak at {peak_freq:.2f} MHz",
-        "timestamp": datetime.now().isoformat()
-    }
+    export_plot(freqs, signal, anomalies, f"results/jammer_plot.png")
+    export_wav(signal, "results/jammer_audio.wav")
+    export_pcap_stub(signal, "results/jammer_capture.pcap")
 
-    with open("webgui/alerts.json", "a") as f:
-        f.write(json.dumps(alert) + "\n")
+    if config.get("websocket_enabled"):
+        send_websocket_alert(result, config["ws_host"], config["ws_port"])
 
-    logging.info(f"Jammer detected at {peak_freq:.2f} MHz | Entropy: {entropy_score:.3f}")
+    logging.info(f"Jammer peak: {peak_freq:.2f} MHz | Entropy: {entropy_val:.2f}")
+    logging.info(f"Results saved: {json_path}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="RF Jammer Locator (Advanced)")
-    parser.add_argument("--config", default="config/config.yaml", help="Path to YAML config")
-    parser.add_argument("--log", default="logs/jammer_locator.log", help="Log file path")
+    parser = argparse.ArgumentParser(description="Advanced RF Jammer Locator")
+    parser.add_argument("--config", default="config/config.yaml", help="YAML config path")
+    parser.add_argument("--log", default="logs/rf_jammer_locator.log", help="Log output path")
     args = parser.parse_args()
     main(args)

@@ -9,6 +9,9 @@ from datetime import datetime
 import socket
 import platform
 import websocket
+from keras.models import Sequential
+from keras.layers import LSTM, Dense
+from sklearn.preprocessing import MinMaxScaler
 
 def load_config(path):
     with open(path, 'r') as f:
@@ -28,7 +31,7 @@ def simulate_telemetry_stream(n_points=150):
     data = np.vstack([normal, anomaly])
     return data.flatten()
 
-def detect_anomalies(data, threshold):
+def detect_anomalies_zscore(data, threshold):
     mean = np.mean(data)
     std = np.std(data)
     rolling_std = np.std(data[-30:])
@@ -36,10 +39,34 @@ def detect_anomalies(data, threshold):
     anomalies = np.abs(z_scores) > threshold
     return anomalies, z_scores
 
+def detect_anomalies_lstm(data, look_back=10, threshold=2.0):
+    scaler = MinMaxScaler()
+    data_scaled = scaler.fit_transform(data.reshape(-1, 1))
+    X, y = [], []
+    for i in range(len(data_scaled) - look_back):
+        X.append(data_scaled[i:i+look_back])
+        y.append(data_scaled[i+look_back])
+    X, y = np.array(X), np.array(y)
+
+    model = Sequential()
+    model.add(LSTM(20, input_shape=(look_back, 1)))
+    model.add(Dense(1))
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    model.fit(X, y, epochs=10, batch_size=1, verbose=0)
+
+    predictions = model.predict(X, verbose=0)
+    mse = np.mean(np.square(y - predictions.reshape(-1)))
+    errors = np.square(y - predictions.reshape(-1))
+    anomalies = errors > threshold * mse
+    z_scores = (errors - np.mean(errors)) / np.std(errors)
+    padded_anomalies = np.concatenate((np.zeros(look_back), anomalies))
+    padded_z = np.concatenate((np.zeros(look_back), z_scores))
+    return padded_anomalies, padded_z
+
 def plot_anomalies(data, anomalies, output_path):
     plt.figure(figsize=(10, 4))
     plt.plot(data, label='Telemetry')
-    plt.plot(np.where(anomalies)[0], data[anomalies], 'ro', label='Anomalies')
+    plt.plot(np.where(anomalies)[0], data[anomalies.astype(bool)], 'ro', label='Anomalies')
     plt.title('Telemetry Anomaly Detection')
     plt.legend()
     plt.savefig(output_path)
@@ -74,19 +101,18 @@ def log_to_agent_inventory(alert):
         json.dump(agents, f, indent=2)
 
 def generate_stix_event(alert):
-    stix = {
+    return {
         "type": "indicator",
         "spec_version": "2.1",
         "id": f"indicator--{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
         "created": datetime.utcnow().isoformat(),
         "name": "Telemetry Anomaly",
-        "description": f"Detected anomaly at point {alert['point_id']}",
+        "description": f"Anomaly at point {alert['point_id']} | value={alert['value']:.2f} | z={alert['z_score']:.2f}",
         "pattern": "[x-telemetry:anomaly_score > 3]",
         "pattern_type": "stix",
         "kill_chain_phases": [{"kill_chain_name": "mitre-attack", "phase_name": "collection"}],
         "labels": ["anomaly", "telemetry", "ai"]
     }
-    return stix
 
 def export_report(alerts):
     os.makedirs("reports", exist_ok=True)
@@ -96,27 +122,31 @@ def export_report(alerts):
 
     with open("reports/telemetry_report.md", "w") as f:
         for alert in alerts:
-            f.write(f"- **Time**: {alert['timestamp']} | **Point**: {alert['point_id']} | **Value**: {alert['value']} | **Z**: {alert['z_score']}\n")
+            f.write(f"- **Time**: {alert['timestamp']} | **Point**: {alert['point_id']} | **Value**: {alert['value']:.2f} | **Z**: {alert['z_score']:.2f}\n")
 
 def enrich_with_ttp(alert):
-    alert["mapped_ttp"] = "T1046"  # Network Service Scanning (example)
+    alert["mapped_ttp"] = "T1046"  # Example mapping
     alert["kill_chain"] = "collection"
     return alert
 
 def main(args):
     config = load_config(args.config)
     setup_logging(args.log)
-    logging.info("Telemetry LSTM Monitor Started")
+    logging.info("== Satellite Defense Toolkit: Telemetry LSTM Monitor ==")
 
     telemetry_data = simulate_telemetry_stream()
-    anomalies, z_scores = detect_anomalies(telemetry_data, config['threshold'])
+
+    if config.get("method", "zscore") == "lstm":
+        anomalies, z_scores = detect_anomalies_lstm(telemetry_data, config.get("look_back", 10), config.get("threshold", 2.0))
+    else:
+        anomalies, z_scores = detect_anomalies_zscore(telemetry_data, config.get("threshold", 3.0))
 
     os.makedirs("results", exist_ok=True)
     alert_log = []
     for i, (val, is_anom, z) in enumerate(zip(telemetry_data, anomalies, z_scores)):
         if is_anom:
             alert = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.utcnow().isoformat(),
                 "point_id": i,
                 "value": float(val),
                 "z_score": float(z),
@@ -132,10 +162,10 @@ def main(args):
 
     plot_anomalies(telemetry_data, anomalies, "results/telemetry_anomaly_plot.png")
     export_report(alert_log)
-    logging.info(f"Detected {len(alert_log)} anomalies. Reports generated.")
+    logging.info(f"[✓] {len(alert_log)} anomalies detected. Reports exported.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Telemetry LSTM Monitor (enhanced full)")
+    parser = argparse.ArgumentParser(description="Telemetry Anomaly Monitor (LSTM/Z-score)")
     parser.add_argument("--config", default="config/config.yaml", help="YAML config path")
     parser.add_argument("--log", default="logs/telemetry_monitor.log", help="Log file path")
     args = parser.parse_args()

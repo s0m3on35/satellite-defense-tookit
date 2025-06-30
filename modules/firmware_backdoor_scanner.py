@@ -1,104 +1,108 @@
 import os
-import re
 import json
-import time
+import hashlib
 import argparse
 from datetime import datetime
 
 AGENT_ID = "firmware_backdoor_scanner"
 ALERT_FILE = "webgui/alerts.json"
-AGENTS_DB = "webgui/agents.json"
+DASHBOARD_AGENTS = "webgui/agents.json"
+KNOWN_PATTERNS_FILE = "config/backdoor_patterns.json"
 RESULTS_DIR = "results"
-CHAIN_SCRIPT = "modules/report_builder.py"
-
-PATTERNS = [
-    (r"(root:.*:0:0:)", "Suspicious /etc/passwd entry (root)"),
-    (r"(?i)(telnetd)", "Telnet service detected"),
-    (r"(?i)(backdoor)", "Backdoor keyword"),
-    (r"(admin:\w+:)", "Hardcoded admin credentials"),
-    (r"(?i)(remote_shell|debug_shell)", "Remote or debug shell"),
-    (r"(?i)(dropbear|busybox ash)", "Embedded shell or SSH variant")
-]
+MITRE_MAPPING_FILE = "config/mitre_map.json"
 
 def log(msg):
-    print(f"[BACKDOOR] {msg}")
+    print(f"[SCANNER] {msg}")
 
-def push_alert(msg):
+def calculate_hash(filepath, algo="sha256"):
+    h = hashlib.new(algo)
+    with open(filepath, "rb") as f:
+        while chunk := f.read(8192):
+            h.update(chunk)
+    return h.hexdigest()
+
+def load_patterns():
+    with open(KNOWN_PATTERNS_FILE, "r") as f:
+        return json.load(f)
+
+def load_mitre_map():
+    if os.path.exists(MITRE_MAPPING_FILE):
+        with open(MITRE_MAPPING_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def scan_file(firmware_path, patterns, mitre_map):
+    matches = []
+    with open(firmware_path, "rb") as f:
+        data = f.read()
+        for sig in patterns:
+            if sig["type"] == "hex" and bytes.fromhex(sig["value"]) in data:
+                match = {
+                    "timestamp": datetime.now().isoformat(),
+                    "pattern_name": sig["name"],
+                    "severity": sig.get("severity", "medium"),
+                    "mitre_techniques": mitre_map.get(sig["name"], []),
+                    "offset": data.find(bytes.fromhex(sig["value"]))
+                }
+                matches.append(match)
+    return matches
+
+def push_alert(match):
     alert = {
         "agent": AGENT_ID,
-        "alert": msg,
+        "alert": f"Firmware backdoor pattern: {match['pattern_name']}",
         "type": "firmware",
-        "timestamp": time.time()
+        "severity": match['severity'],
+        "mitre": match["mitre_techniques"],
+        "timestamp": match["timestamp"]
     }
+    os.makedirs(os.path.dirname(ALERT_FILE), exist_ok=True)
     with open(ALERT_FILE, "a") as f:
         f.write(json.dumps(alert) + "\n")
 
-def register_agent():
-    os.makedirs(os.path.dirname(AGENTS_DB), exist_ok=True)
-    if not os.path.exists(AGENTS_DB):
-        with open(AGENTS_DB, "w") as f:
-            json.dump([], f)
-    with open(AGENTS_DB, "r") as f:
-        agents = json.load(f)
-    if AGENT_ID not in [a["id"] for a in agents]:
-        agents.append({
-            "id": AGENT_ID,
-            "type": "firmware",
-            "registered": datetime.now().isoformat()
-        })
-        with open(AGENTS_DB, "w") as f:
-            json.dump(agents, f, indent=2)
-
-def scan_firmware(directory):
-    findings = []
-    for root, _, files in os.walk(directory):
-        for file in files:
-            full_path = os.path.join(root, file)
-            try:
-                with open(full_path, "rb") as f:
-                    content = f.read().decode(errors="ignore")
-                    for pattern, desc in PATTERNS:
-                        if re.search(pattern, content):
-                            findings.append({
-                                "timestamp": datetime.now().isoformat(),
-                                "file": full_path,
-                                "pattern": pattern,
-                                "description": desc
-                            })
-            except:
-                continue
-    return findings
-
-def export_results(findings):
-    os.makedirs(RESULTS_DIR, exist_ok=True)
-    path = os.path.join(RESULTS_DIR, "firmware_backdoor_findings.json")
-    with open(path, "w") as f:
-        json.dump(findings, f, indent=4)
-    return path
-
-def chain_reporter():
-    os.system(f"python3 {CHAIN_SCRIPT} --source firmware_backdoor_findings.json")
-
-def main():
-    parser = argparse.ArgumentParser(description="Firmware Backdoor Scanner")
-    parser.add_argument("--input", required=True, help="Unpacked firmware directory")
-    args = parser.parse_args()
-
-    register_agent()
-    push_alert("Backdoor scan started")
-    log("Scanning for hardcoded credentials and backdoors")
-
-    findings = scan_firmware(args.input)
-
-    if findings:
-        push_alert(f"{len(findings)} suspicious pattern(s) found")
-        log(f"{len(findings)} potential backdoors detected")
+def update_agent_inventory(firmware_path):
+    agent_entry = {
+        "agent_id": AGENT_ID,
+        "last_scan": datetime.now().isoformat(),
+        "firmware": os.path.basename(firmware_path)
+    }
+    os.makedirs(os.path.dirname(DASHBOARD_AGENTS), exist_ok=True)
+    if os.path.exists(DASHBOARD_AGENTS):
+        with open(DASHBOARD_AGENTS, "r") as f:
+            agents = json.load(f)
     else:
-        log("No suspicious patterns found")
-        push_alert("Scan complete: no issues")
+        agents = []
+    agents = [a for a in agents if a["agent_id"] != AGENT_ID]
+    agents.append(agent_entry)
+    with open(DASHBOARD_AGENTS, "w") as f:
+        json.dump(agents, f, indent=2)
 
-    export_results(findings)
-    chain_reporter()
+def export_results(matches):
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    output_path = os.path.join(RESULTS_DIR, "firmware_backdoor_matches.json")
+    with open(output_path, "w") as f:
+        json.dump(matches, f, indent=4)
+    log(f"Results saved to {output_path}")
+
+def main(args):
+    log("Scanning firmware for backdoor patterns")
+    patterns = load_patterns()
+    mitre_map = load_mitre_map()
+    matches = scan_file(args.firmware, patterns, mitre_map)
+
+    for match in matches:
+        push_alert(match)
+
+    update_agent_inventory(args.firmware)
+    export_results(matches)
+
+    if not matches:
+        log("No backdoor patterns found.")
+    else:
+        log(f"{len(matches)} suspicious patterns found.")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Firmware Backdoor Scanner")
+    parser.add_argument("--firmware", default="test_firmware.bin", help="Firmware binary to scan")
+    args = parser.parse_args()
+    main(args)

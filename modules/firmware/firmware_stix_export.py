@@ -4,31 +4,21 @@ import hashlib
 import logging
 import argparse
 import uuid
-import asyncio
-import websockets
 import requests
+import websocket
 from datetime import datetime
 from stix2 import Indicator, ObservedData, Bundle, File
-from taxii2client.v20 import Server
-import tkinter as tk
-from tkinter import filedialog
 
-# === Configs ===
-RESULTS_DIR = "results"
-WEBSOCKET_URI = "ws://localhost:8765"
-DASHBOARD_URL = "http://localhost:8080/api/alerts"
-
-# === Logging ===
+# === Setup ===
 def setup_logging(log_file):
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     logging.basicConfig(
         filename=log_file,
         level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s"
+        format='%(asctime)s - %(levelname)s - %(message)s'
     )
     logging.getLogger().addHandler(logging.StreamHandler())
 
-# === Firmware Hash ===
 def hash_firmware(file_path):
     h = hashlib.sha256()
     with open(file_path, 'rb') as f:
@@ -36,29 +26,27 @@ def hash_firmware(file_path):
             h.update(chunk)
     return h.hexdigest()
 
-# === Anomaly Detection ===
 def detect_firmware_anomalies(file_path):
     hash_val = hash_firmware(file_path)
+    logging.info(f"[✓] Firmware hash: {hash_val}")
     suspicious_patterns = ["telnet", "busybox", "dropbear", "reverse shell"]
     with open(file_path, 'rb') as f:
         content = f.read().decode(errors='ignore')
         for pattern in suspicious_patterns:
             if pattern in content:
-                logging.warning(f"Suspicious string detected: {pattern}")
+                logging.warning(f"[!] Suspicious string detected: {pattern}")
                 return True, pattern, hash_val
     return False, None, hash_val
 
-# === Kill Chain Mapping ===
 def map_killchain_stage(pattern):
     mapping = {
-        "telnet": "Initial Access",
-        "busybox": "Execution",
-        "dropbear": "Persistence",
-        "reverse shell": "Command and Control"
+        "telnet": "initial-access",
+        "busybox": "execution",
+        "dropbear": "persistence",
+        "reverse shell": "command-and-control"
     }
-    return mapping.get(pattern, "Unknown")
+    return mapping.get(pattern.lower(), "unknown")
 
-# === STIX Creation ===
 def create_stix_bundle(pattern, hash_val, filename, killchain_stage):
     file_obs = File(
         name=filename,
@@ -68,6 +56,7 @@ def create_stix_bundle(pattern, hash_val, filename, killchain_stage):
     indicator = Indicator(
         id=f"indicator--{uuid.uuid4()}",
         name="Firmware Backdoor Pattern",
+        description=f"Detected pattern: {pattern}",
         pattern_type="stix",
         pattern=f"[file:name = '{filename}' AND file:hashes.'SHA-256' = '{hash_val}']",
         valid_from=datetime.utcnow(),
@@ -83,106 +72,88 @@ def create_stix_bundle(pattern, hash_val, filename, killchain_stage):
         number_observed=1,
         objects={"0": file_obs}
     )
-    return Bundle(objects=[indicator, obs_data])
+    bundle = Bundle(objects=[indicator, obs_data])
+    return bundle
 
-# === Save STIX ===
 def save_bundle(bundle, path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w') as f:
         f.write(bundle.serialize(pretty=True))
-    logging.info(f"STIX bundle saved to {path}")
+    logging.info(f"[✓] STIX bundle saved to {path}")
 
-# === Send to Dashboard (HTTP POST) ===
 def send_to_dashboard(bundle_path):
-    with open(bundle_path, 'r') as f:
-        payload = json.load(f)
     try:
-        r = requests.post(DASHBOARD_URL, json=payload)
+        with open(bundle_path, 'r') as f:
+            payload = json.load(f)
+        r = requests.post("http://localhost:8080/api/alerts", json=payload)
         if r.ok:
-            logging.info("Alert sent to dashboard (HTTP).")
+            logging.info("[✓] Alert sent to dashboard")
         else:
-            logging.error(f"Dashboard HTTP upload failed: {r.status_code}")
+            logging.warning(f"[!] Dashboard rejected alert: {r.status_code}")
     except Exception as e:
-        logging.error(f"Dashboard HTTP error: {e}")
+        logging.error(f"[!] Dashboard upload failed: {e}")
 
-# === WebSocket Streaming ===
-async def send_ws_alert(stix_path, pattern, hash_val, filename, killchain_stage):
-    alert = {
-        "type": "firmware_alert",
-        "source": "firmware_stix_export",
-        "filename": filename,
-        "pattern": pattern,
-        "hash": hash_val,
-        "killchain": killchain_stage,
-        "path": stix_path,
-        "timestamp": datetime.now().isoformat()
-    }
+def send_websocket_alert(msg):
     try:
-        async with websockets.connect(WEBSOCKET_URI) as ws:
-            await ws.send(json.dumps(alert))
-            ack = await ws.recv()
-            logging.info(f"WebSocket ACK: {ack}")
+        ws = websocket.create_connection("ws://localhost:8765")
+        ws.send(json.dumps(msg))
+        ws.close()
+        logging.info("[✓] WebSocket alert sent")
     except Exception as e:
-        logging.error(f"WebSocket error: {e}")
+        logging.warning(f"[!] WebSocket failed: {e}")
 
-# === Push to TAXII Server ===
 def push_to_taxii(bundle, server_url, collection_id, username, password):
     try:
+        from taxii2client.v20 import Server
         server = Server(server_url, user=username, password=password)
-        api_root = server.api_roots[0]
-        collection = api_root.collections[collection_id]
+        collection = server.api_roots[0].collections[collection_id]
         collection.add_objects([bundle])
-        logging.info("STIX pushed to TAXII server.")
+        logging.info("[✓] STIX bundle pushed to TAXII server.")
     except Exception as e:
-        logging.error(f"TAXII push failed: {e}")
-
-# === Optional GUI File Picker ===
-def pick_file_gui():
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename(title="Select firmware file")
-    return file_path
+        logging.error(f"[!] TAXII push failed: {e}")
 
 # === Main ===
 def main(args):
     setup_logging(args.log)
-    logging.info("Launching Enhanced Firmware STIX Export")
+    logging.info("=== Starting Military-Grade Firmware STIX Export ===")
 
-    firmware_file = pick_file_gui() if args.gui else args.firmware
-
-    if not firmware_file or not os.path.exists(firmware_file):
-        logging.error("Firmware file not found or not provided.")
+    firmware_file = args.firmware
+    if not os.path.exists(firmware_file):
+        logging.error(f"[✗] Firmware file not found: {firmware_file}")
         return
-
-    os.makedirs(RESULTS_DIR, exist_ok=True)
 
     anomaly_found, pattern, hash_val = detect_firmware_anomalies(firmware_file)
     if anomaly_found:
         killchain_stage = map_killchain_stage(pattern)
         bundle = create_stix_bundle(pattern, hash_val, os.path.basename(firmware_file), killchain_stage)
-        stix_path = os.path.join(RESULTS_DIR, f"stix_firmware_alert_{datetime.now().strftime('%Y%m%d%H%M%S')}.json")
+        stix_path = f"results/stix_firmware_alert_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         save_bundle(bundle, stix_path)
 
-        # WebSocket + HTTP Dashboard
         if args.dashboard:
             send_to_dashboard(stix_path)
-            asyncio.run(send_ws_alert(stix_path, pattern, hash_val, os.path.basename(firmware_file), killchain_stage))
 
-        # TAXII
+        if args.websocket:
+            send_websocket_alert({
+                "type": "firmware_anomaly",
+                "file": os.path.basename(firmware_file),
+                "pattern": pattern,
+                "hash": hash_val,
+                "killchain": killchain_stage,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+
         if args.taxii:
             push_to_taxii(bundle, args.taxii, args.collection, args.user, args.password)
 
-        # Optional YARA dashboard trigger
-        os.system("python3 modules/dashboard/yara_dashboard_streamer.py")
     else:
-        logging.info("No anomalies detected.")
+        logging.info("[✓] No anomalies found in firmware.")
 
-# === CLI ===
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Firmware STIX Export + Dashboard + TAXII + Killchain")
-    parser.add_argument("--firmware", help="Path to firmware file")
-    parser.add_argument("--gui", action="store_true", help="Use GUI file picker")
+    parser = argparse.ArgumentParser(description="Military Firmware STIX Export")
+    parser.add_argument("--firmware", required=True, help="Path to firmware file")
     parser.add_argument("--log", default="logs/firmware_stix.log", help="Log file path")
-    parser.add_argument("--dashboard", action="store_true", help="Send alerts to dashboard")
+    parser.add_argument("--dashboard", action="store_true", help="Send alert to dashboard")
+    parser.add_argument("--websocket", action="store_true", help="Send alert to WebSocket")
     parser.add_argument("--taxii", help="TAXII server URL")
     parser.add_argument("--collection", help="TAXII Collection ID")
     parser.add_argument("--user", help="TAXII Username")

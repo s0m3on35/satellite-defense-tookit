@@ -1,4 +1,4 @@
-# firmware_stix_export.py (Phase 7+)
+# firmware_stix_export.py 
 # Firmware Anomaly Detection, STIX/TAXII Export, Dashboard Upload, Killchain Mapping
 
 import os

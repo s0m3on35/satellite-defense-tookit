@@ -5,7 +5,6 @@ import threading
 import os
 import datetime
 
-# === Configuration ===
 LOG_DIR = "logs"
 RESULTS_DIR = "results"
 DEFAULT_IFACE = "eth0"
@@ -13,7 +12,6 @@ DEFAULT_IFACE = "eth0"
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-# === Command Execution ===
 def run_cmd(cmd):
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -24,7 +22,6 @@ def run_cmd(cmd):
         output_text.insert(tk.END, f"[ERROR] {e}\n")
         output_text.see(tk.END)
 
-# === Capture PCAP ===
 def run_pcap_capture():
     iface = iface_entry.get().strip()
     timeout = int(timeout_entry.get().strip())
@@ -49,7 +46,6 @@ def run_pcap_capture():
     output_text.insert(tk.END, f"[+] Executing: {' '.join(cmd)}\n")
     threading.Thread(target=run_cmd, args=(cmd,), daemon=True).start()
 
-# === Firmware Analysis ===
 def run_stix_export():
     fw_path = filedialog.askopenfilename(title="Select Firmware Binary")
     if not fw_path:
@@ -71,7 +67,6 @@ def run_stix_export():
     output_text.insert(tk.END, f"[+] Analyzing firmware: {fw_path}\n")
     threading.Thread(target=run_cmd, args=(cmd,), daemon=True).start()
 
-# === GUI Setup ===
 root = tk.Tk()
 root.title("Satellite Defense Toolkit GUI")
 root.geometry("850x650")

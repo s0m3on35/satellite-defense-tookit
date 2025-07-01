@@ -1,90 +1,79 @@
-import tkinter as tk
-from tkinter import scrolledtext, filedialog
-import subprocess
-import threading
 import os
 import json
-import datetime
-import websocket
-import ssl
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime
 
-LOG_PATH = "logs"
-RESULTS_PATH = "results"
-STIX_MODULE = "modules/firmware_stix_export.py"
-ENTROPY_SCRIPT = "modules/entropy_analyzer.py"
-COPILOT_TRIGGER = "copilot/copilot_ai.py"
-WS_ENDPOINT = "ws://localhost:9999/entropy"
+BLOCK_SIZE = 256
+ENTROPY_THRESHOLD = 5.0
+OUTPUT_DIR = "results"
+DEFAULT_FIRMWARE = "sample_firmware.bin"
+ANOMALY_JSON = os.path.join(OUTPUT_DIR, "entropy_anomalies.json")
+PLOT_OUTPUT = os.path.join(OUTPUT_DIR, "entropy_map.png")
 
-os.makedirs(LOG_PATH, exist_ok=True)
-os.makedirs(RESULTS_PATH, exist_ok=True)
+def calculate_entropy(block):
+    if not block:
+        return 0
+    freq = np.array([block.count(b) for b in set(block)])
+    prob = freq / len(block)
+    entropy = -np.sum(prob * np.log2(prob))
+    return entropy
 
-def append_log(msg):
-    log_box.insert(tk.END, msg + "\n")
-    log_box.see(tk.END)
-
-def run_script(cmd):
-    def _run():
-        try:
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            for line in proc.stdout:
-                append_log(line.strip())
-        except Exception as e:
-            append_log(f"[ERROR] {e}")
-    threading.Thread(target=_run, daemon=True).start()
-
-def run_entropy_scan():
-    target = filedialog.askopenfilename(title="Select File or Firmware")
-    if not target:
-        return
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    log_file = f"{LOG_PATH}/entropy_gui_{timestamp}.log"
-    cmd = ["python3", ENTROPY_SCRIPT, "--input", target, "--log", log_file, "--json"]
-    append_log(f"[+] Running: {' '.join(cmd)}")
-    run_script(cmd)
-
-def check_entropy_results_and_stix():
+def ask_for_firmware():
     try:
-        with open(f"{RESULTS_PATH}/entropy_anomalies.json") as f:
-            data = json.load(f)
-        if data.get("anomalies_detected"):
-            append_log("[*] Anomalies found. Triggering STIX export...")
-            run_script(["python3", STIX_MODULE, "--from-entropy"])
-        else:
-            append_log("[*] No critical anomalies.")
-    except Exception as e:
-        append_log(f"[ERROR] Could not load anomalies: {e}")
+        from tkinter import Tk, filedialog
+        root = Tk()
+        root.withdraw()
+        fw_path = filedialog.askopenfilename(title="Select Firmware Binary")
+        root.destroy()
+        return fw_path if fw_path else DEFAULT_FIRMWARE
+    except:
+        path = input("Enter firmware path (or press Enter for default): ").strip()
+        return path if path else DEFAULT_FIRMWARE
 
-def launch_copilot_suggestion():
-    run_script(["python3", COPILOT_TRIGGER, "--context", "entropy"])
+def generate_entropy_map(firmware_path):
+    entropies = []
+    with open(firmware_path, "rb") as f:
+        while block := f.read(BLOCK_SIZE):
+            ent = calculate_entropy(block)
+            entropies.append(ent)
+    return entropies
 
-def ws_listener():
-    def on_message(ws, msg):
-        append_log(f"[WS] {msg}")
+def detect_anomalies(entropies):
+    return [{"offset": i * BLOCK_SIZE, "entropy": e}
+            for i, e in enumerate(entropies) if e >= ENTROPY_THRESHOLD]
 
-    def on_error(ws, err):
-        append_log(f"[WS ERROR] {err}")
+def save_anomalies(anomalies):
+    with open(ANOMALY_JSON, "w") as f:
+        json.dump(anomalies, f, indent=2)
 
-    def on_close(ws, code, msg):
-        append_log("[WS] Connection closed.")
+def plot_entropy(entropies):
+    plt.figure(figsize=(12, 5))
+    plt.plot(entropies, label="Entropy")
+    plt.axhline(y=ENTROPY_THRESHOLD, color='r', linestyle='--', label='Threshold')
+    plt.title("Entropy Map")
+    plt.xlabel("Block Index")
+    plt.ylabel("Entropy")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(PLOT_OUTPUT)
+    plt.close()
 
-    def _ws():
-        ws = websocket.WebSocketApp(WS_ENDPOINT, on_message=on_message, on_error=on_error, on_close=on_close)
-        ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
-    threading.Thread(target=_ws, daemon=True).start()
+def ensure_directories():
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-root = tk.Tk()
-root.title("Entropy Analyzer - Satellite Defense Toolkit")
-root.geometry("900x600")
+def main():
+    ensure_directories()
+    firmware_path = ask_for_firmware()
+    entropies = generate_entropy_map(firmware_path)
+    anomalies = detect_anomalies(entropies)
+    save_anomalies(anomalies)
+    plot_entropy(entropies)
+    print(f"[✓] Analyzed: {firmware_path}")
+    print(f"[✓] Entropy blocks: {len(entropies)}")
+    print(f"[✓] Anomalies detected: {len(anomalies)}")
+    print(f"[✓] Saved to: {ANOMALY_JSON}")
+    print(f"[✓] Plot saved to: {PLOT_OUTPUT}")
 
-tk.Button(root, text="Start Entropy Scan", width=30, command=run_entropy_scan, bg="#4CAF50", fg="white").grid(row=0, column=0, padx=5, pady=5)
-tk.Button(root, text="Analyze and Export STIX", width=30, command=check_entropy_results_and_stix, bg="#2196F3", fg="white").grid(row=0, column=1, padx=5, pady=5)
-tk.Button(root, text="Trigger Copilot Advice", width=30, command=launch_copilot_suggestion, bg="#795548", fg="white").grid(row=1, column=0, padx=5, pady=5)
-tk.Button(root, text="Start WebSocket Listener", width=30, command=ws_listener, bg="#9C27B0", fg="white").grid(row=1, column=1, padx=5, pady=5)
-
-tk.Label(root, text="Live Log Output").grid(row=2, column=0, columnspan=2)
-log_box = scrolledtext.ScrolledText(root, width=110, height=30)
-log_box.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
-
-tk.Label(root, text="© Satellite Defense Toolkit - Entropy GUI").grid(row=4, column=0, sticky="w", padx=5)
-
-root.mainloop()
+if __name__ == "__main__":
+    main()

@@ -1,74 +1,64 @@
-import argparse
-import json
 import os
+import json
 import requests
 from datetime import datetime
 
-LOG_DIR = "results"
-INPUT_PATH = "results/yara_matches.json"
-CVE_API_URL = "https://cve.circl.lu/api/search/"
+FIRMWARE_DIR = "firmware"
+RESULTS_DIR = "results"
+CVE_RESULTS = os.path.join(RESULTS_DIR, "firmware_cve_matches.json")
+CVE_API = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 
-os.makedirs(LOG_DIR, exist_ok=True)
+def extract_version_signatures(firmware_path):
+    signatures = []
+    with open(firmware_path, "rb") as f:
+        data = f.read()
+        for line in data.split(b"\n"):
+            if b"v" in line.lower() or b"ver" in line.lower():
+                line_str = line.decode(errors="ignore").strip()
+                if any(char.isdigit() for char in line_str):
+                    signatures.append(line_str)
+    return list(set(signatures))
 
-def query_cve(term):
+def query_cve_api(query):
+    params = {"keywordSearch": query, "resultsPerPage": 5}
     try:
-        response = requests.get(f"{CVE_API_URL}{term}")
+        response = requests.get(CVE_API, params=params, timeout=10)
         if response.status_code == 200:
-            return response.json().get("data", [])
-        else:
-            return []
+            return response.json().get("vulnerabilities", [])
     except Exception:
         return []
 
-def extract_terms(matches):
-    terms = set()
-    for m in matches:
-        desc = m.get("meta", {}).get("description", "")
-        if desc:
-            for word in desc.split():
-                if len(word) > 4:
-                    terms.add(word.lower())
-    return list(terms)
+def analyze_firmware_for_cves(firmware_path):
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    signatures = extract_version_signatures(firmware_path)
+    cve_matches = []
 
-def save_results(results, firmware_path):
-    ts = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-    out_file = os.path.join(LOG_DIR, f"firmware_cve_map_{ts}.json")
-    report = {
-        "firmware": firmware_path,
-        "timestamp": ts,
-        "cve_hits": results
-    }
-    with open(out_file, "w") as f:
-        json.dump(report, f, indent=2)
-    print(f"[+] CVE mapping report saved to {out_file}")
-
-def main():
-    parser = argparse.ArgumentParser(description="Map YARA firmware indicators to known CVEs")
-    parser.add_argument("--firmware", required=True, help="Path to scanned firmware")
-    args = parser.parse_args()
-
-    if not os.path.exists(INPUT_PATH):
-        print(f"[!] Match data not found: {INPUT_PATH}")
-        return
-
-    with open(INPUT_PATH, "r") as f:
-        matches = json.load(f)
-
-    terms = extract_terms(matches)
-    results = []
-
-    for term in terms:
-        cves = query_cve(term)
-        for cve in cves:
-            results.append({
-                "keyword": term,
-                "id": cve.get("id"),
-                "summary": cve.get("summary"),
-                "cvss": cve.get("cvss"),
-                "published": cve.get("Published")
+    for sig in signatures:
+        results = query_cve_api(sig)
+        for item in results:
+            cve = item.get("cve", {})
+            cve_id = cve.get("id")
+            description = cve.get("descriptions", [{}])[0].get("value", "")
+            severity = cve.get("metrics", {}).get("cvssMetricV31", [{}])[0].get("cvssData", {}).get("baseSeverity", "")
+            cve_matches.append({
+                "firmware": os.path.basename(firmware_path),
+                "signature": sig,
+                "cve_id": cve_id,
+                "description": description,
+                "severity": severity,
+                "timestamp": datetime.utcnow().strftime("%Y%m%d%H%M%S")
             })
 
-    save_results(results, args.firmware)
+    with open(CVE_RESULTS, "w") as f:
+        json.dump(cve_matches, f, indent=2)
+    print(f"[✓] CVE results saved to: {CVE_RESULTS}")
+
+def main():
+    fw_path = input("Firmware path: ").strip()
+    if not os.path.exists(fw_path):
+        print("[!] Firmware file not found.")
+        return
+    analyze_firmware_for_cves(fw_path)
 
 if __name__ == "__main__":
     main()

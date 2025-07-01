@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Satellite Defense Toolkit Dashboard Logs</title>
+  <style>
+    body {
+      font-family: monospace;
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 20px;
+      color: #333;
+    }
+    #log {
+      background-color: #000;
+      color: #0f0;
+      padding: 15px;
+      height: 500px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Live Module Logs</h1>
+  <div id="log"></div>
+
+  <script>
+    const logDiv = document.getElementById("log");
+    const ws = new WebSocket("ws://localhost:8765");
+
+    ws.onmessage = function(event) {
+      const data = JSON.parse(event.data);
+      const line = `[${new Date().toISOString()}] ${data.type.toUpperCase()}: ${data.message}`;
+      logDiv.innerText += line + "\n";
+      logDiv.scrollTop = logDiv.scrollHeight;
+    };
+
+    ws.onclose = function() {
+      logDiv.innerText += "[Connection closed]\n";
+    };
+
+    ws.onerror = function() {
+      logDiv.innerText += "[WebSocket error]\n";
+    };
+  </script>
+</body>
+</html>

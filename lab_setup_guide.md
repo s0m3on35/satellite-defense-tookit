@@ -48,23 +48,22 @@ This script installs dependencies, creates necessary directories, and generates 
 - MITRE map example
 
 ## 4. Resulting Folder Structure
-
 ```
 satellite-defense-toolkit/
-âââ lab_setup.sh
-âââ run_toolkit.sh
-âââ modules/
-âââ webgui/
-âââ copilot/
-âââ results/
-â   âââ mitre_map.json
-â   âââ stix_ota_alert.json
-âââ logs/
-â   âââ dashboard/
-â   â   âââ dashboard_stream.log
-â   âââ ota_streams/
-â       âââ ota_stream.bin
-âââ sandbox/
+|-- lab_setup.sh
+|-- run_toolkit.sh
+|-- modules/
+|-- webgui/
+|-- copilot/
+|-- results/
+|   |-- mitre_map.json
+|   |-- stix_ota_alert.json
+|-- logs/
+|   |-- dashboard/
+|   |   |-- dashboard_stream.log
+|   |-- ota_streams/
+|       |-- ota_stream.bin
+|-- sandbox/
 ```
 
 ## 5. Module Testing Reference

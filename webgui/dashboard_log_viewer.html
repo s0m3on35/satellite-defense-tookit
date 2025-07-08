@@ -2,49 +2,158 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Satellite Defense Toolkit Dashboard Logs</title>
+  <title>Satellite Defense Toolkit — Live Dashboard</title>
   <style>
     body {
       font-family: monospace;
-      background-color: #f4f4f4;
-      padding: 20px;
+      background-color: #0d0d0d;
+      color: #00ffcc;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #1a1a1a;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 2px solid #333;
     }
     h1 {
+      margin: 0;
       font-size: 20px;
-      color: #333;
     }
-    #log {
+    .tabs {
+      display: flex;
+      background-color: #111;
+      border-bottom: 1px solid #444;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #111;
+      border-right: 1px solid #333;
+      user-select: none;
+    }
+    .tab.active {
+      background-color: #222;
+      font-weight: bold;
+      color: #0ff;
+    }
+    .tab-content {
+      display: none;
+      padding: 20px;
+      height: 600px;
+      overflow-y: auto;
       background-color: #000;
-      color: #0f0;
-      padding: 15px;
-      height: 500px;
-      overflow-y: scroll;
-      border: 1px solid #ccc;
+      white-space: pre-wrap;
+      border-top: 1px solid #222;
     }
+    .tab-content.active {
+      display: block;
+    }
+    .log-entry.error { color: red; }
+    .log-entry.info { color: #0f0; }
+    .log-entry.alert { color: yellow; }
+    .log-entry.stix { color: cyan; }
+    .log-entry.agent { color: orange; }
   </style>
 </head>
 <body>
-  <h1>Live Module Logs</h1>
-  <div id="log"></div>
+  <header>
+    <h1> Satellite Defense Toolkit — Live Dashboard</h1>
+  </header>
+
+  <div class="tabs" id="tabBar">
+    <div class="tab active" data-tab="logs" onclick="showTab('logs')">Logs</div>
+  </div>
+
+  <div id="logs" class="tab-content active"></div>
+  <!-- Los siguientes contenedores se agregan dinámicamente si se detectan -->
+  <!-- STIX: <div id="stix" class="tab-content"></div> -->
+  <!-- Agents: <div id="agents" class="tab-content"></div> -->
 
   <script>
-    const logDiv = document.getElementById("log");
-    const ws = new WebSocket("ws://localhost:8765");
+    const tabBar = document.getElementById("tabBar");
+    const tabsShown = new Set(["logs"]);
 
-    ws.onmessage = function(event) {
-      const data = JSON.parse(event.data);
-      const line = `[${new Date().toISOString()}] ${data.type.toUpperCase()}: ${data.message}`;
-      logDiv.innerText += line + "\n";
-      logDiv.scrollTop = logDiv.scrollHeight;
-    };
+    function showTab(tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
 
-    ws.onclose = function() {
-      logDiv.innerText += "[Connection closed]\n";
-    };
+    function createTabIfMissing(tabId, label) {
+      if (!tabsShown.has(tabId)) {
+        // Add tab button
+        const tab = document.createElement("div");
+        tab.className = "tab";
+        tab.dataset.tab = tabId;
+        tab.textContent = label;
+        tab.onclick = () => showTab(tabId);
+        tabBar.appendChild(tab);
 
-    ws.onerror = function() {
-      logDiv.innerText += "[WebSocket error]\n";
-    };
+        // Add content container
+        const content = document.createElement("div");
+        content.id = tabId;
+        content.className = "tab-content";
+        document.body.appendChild(content);
+
+        tabsShown.add(tabId);
+      }
+    }
+
+    function appendLog(containerId, message, type = 'info') {
+      createTabIfMissing(containerId, capitalize(containerId));
+      const div = document.createElement('div');
+      div.className = `log-entry ${type}`;
+      div.textContent = `[${new Date().toISOString()}] ${type.toUpperCase()}: ${message}`;
+      const container = document.getElementById(containerId);
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function setContent(containerId, content, type = 'json') {
+      createTabIfMissing(containerId, capitalize(containerId));
+      const container = document.getElementById(containerId);
+      container.textContent = (type === 'json') ? JSON.stringify(content, null, 2) : content;
+      container.scrollTop = 0;
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function connectWebSocket() {
+      const ws = new WebSocket("ws://localhost:8765");
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          const type = (data.type || 'info').toLowerCase();
+
+          if (type === 'stix') {
+            setContent('stix', data.data);
+          } else if (type === 'agent') {
+            setContent('agents', data.data);
+          } else {
+            appendLog('logs', data.message || JSON.stringify(data), type);
+          }
+        } catch (err) {
+          appendLog('logs', 'Malformed WebSocket message.', 'error');
+        }
+      };
+
+      ws.onclose = () => {
+        appendLog('logs', '[WebSocket connection closed - retrying in 3s]', 'alert');
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      ws.onerror = () => {
+        appendLog('logs', '[WebSocket error]', 'error');
+      };
+    }
+
+    connectWebSocket();
   </script>
 </body>
 </html>

@@ -15,7 +15,7 @@ STIX_FILE = "results/stix_yara_bundle.json"
 
 connected_clients = set()
 
-# Configura logging
+# Configuración de logging
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,
@@ -68,13 +68,13 @@ async def handler(websocket, path):
             if data:
                 msg_out = json.dumps(data)
                 await broadcast_to_all(msg_out)
-    except websockets.exceptions.ConnectionClosed as e:
+    except websockets.exceptions.ConnectionClosed:
         logging.info(f"[-] Client disconnected: {websocket.remote_address}")
     finally:
         connected_clients.discard(websocket)
 
 async def main():
-    print("🛰️  [WS Server] Satellite Toolkit Dashboard WebSocket Server running at ws://0.0.0.0:8765")
+    print("[WS Server] Satellite Toolkit Dashboard WebSocket Server running at ws://0.0.0.0:8765")
     server = await websockets.serve(handler, "0.0.0.0", 8765)
     await asyncio.gather(server.wait_closed(), stix_stream_broadcast())
 

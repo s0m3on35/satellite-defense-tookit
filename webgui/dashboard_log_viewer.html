@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -9,59 +9,71 @@
     }
 
     body {
-      font-family: 'Courier New', Courier, monospace;
-      background-color: #101010;
-      color: #d0f0f0;
       margin: 0;
-      padding: 0;
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #0b0b0b;
+      color: #e0fefc;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
     }
 
     header {
-      background-color: #181818;
-      padding: 20px;
+      background-color: #141414;
+      padding: 16px;
       text-align: center;
-      border-bottom: 1px solid #333;
+      border-bottom: 1px solid #2e2e2e;
+      flex-shrink: 0;
     }
 
-    h1 {
+    header h1 {
       margin: 0;
-      font-size: 22px;
-      color: #00ffee;
-      letter-spacing: 0.5px;
+      font-size: 20px;
+      color: #00ffe0;
+      letter-spacing: 0.4px;
     }
 
     .tabs {
       display: flex;
-      background-color: #131313;
+      background-color: #101010;
       border-bottom: 1px solid #333;
+      flex-shrink: 0;
     }
 
     .tab {
-      padding: 12px 24px;
+      padding: 12px 20px;
       cursor: pointer;
-      color: #ccc;
-      transition: background 0.2s, color 0.2s;
+      color: #aaa;
+      background-color: #101010;
       border-right: 1px solid #222;
+      transition: background 0.2s, color 0.2s;
     }
 
     .tab:hover {
-      background-color: #1c1c1c;
+      background-color: #181818;
       color: #00e0ff;
     }
 
     .tab.active {
       background-color: #222;
       font-weight: bold;
-      color: #00ffee;
+      color: #00ffe0;
+    }
+
+    .content-wrapper {
+      flex-grow: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .tab-content {
       display: none;
       padding: 20px;
-      height: 600px;
       overflow-y: auto;
-      background-color: #0b0b0b;
-      border-top: 1px solid #222;
+      flex-grow: 1;
+      background-color: #000;
       white-space: pre-wrap;
       font-size: 14px;
       line-height: 1.5;
@@ -75,15 +87,14 @@
       margin-bottom: 5px;
     }
 
-    .log-entry.error { color: #ff4d4d; }
-    .log-entry.info { color: #00ff00; }
+    .log-entry.error { color: #ff5c5c; }
+    .log-entry.info { color: #33ff33; }
     .log-entry.alert { color: #ffff66; }
     .log-entry.stix { color: #33ccff; }
-    .log-entry.agent { color: #ffa500; }
+    .log-entry.agent { color: #ffaa33; }
 
-    /* Scrollbar styling */
     .tab-content::-webkit-scrollbar {
-      width: 8px;
+      width: 10px;
     }
 
     .tab-content::-webkit-scrollbar-track {
@@ -93,6 +104,7 @@
     .tab-content::-webkit-scrollbar-thumb {
       background-color: #444;
       border-radius: 4px;
+      border: 2px solid #111;
     }
   </style>
 </head>
@@ -105,7 +117,9 @@
     <div class="tab active" data-tab="logs" onclick="showTab('logs')">Logs</div>
   </div>
 
-  <div id="logs" class="tab-content active"></div>
+  <div class="content-wrapper">
+    <div id="logs" class="tab-content active"></div>
+  </div>
 
   <script>
     const tabBar = document.getElementById("tabBar");
@@ -130,7 +144,7 @@
         const content = document.createElement("div");
         content.id = tabId;
         content.className = "tab-content";
-        document.body.appendChild(content);
+        document.querySelector('.content-wrapper').appendChild(content);
 
         tabsShown.add(tabId);
       }

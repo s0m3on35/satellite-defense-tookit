@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# Route: modules/attacks/ota_firmware_injector.py
-# Real OTA Firmware Backdoor Injection with Python payload execution
 
 import subprocess
 import argparse

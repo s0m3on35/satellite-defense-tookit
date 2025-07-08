@@ -2,7 +2,7 @@
 
 !(docs/wiki/banner.jpg)
 
-> A modular, AI-powered toolkit to monitor and defend GNSS, SATCOM, and space-connected infrastructure against spoofing, jamming, firmware tampering, and telemetry anomalies.
+> A modular toolkit to monitor and defend GNSS, SATCOM, and space-connected infrastructure against spoofing, jamming, firmware tampering, and telemetry anomalies.
 
 ---
 

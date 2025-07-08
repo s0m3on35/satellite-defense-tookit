@@ -1,65 +1,104 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Satellite Defense Toolkit — Live Dashboard</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: monospace;
-      background-color: #0d0d0d;
-      color: #00ffcc;
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #101010;
+      color: #d0f0f0;
       margin: 0;
       padding: 0;
     }
+
     header {
-      background-color: #1a1a1a;
-      padding: 15px;
+      background-color: #181818;
+      padding: 20px;
       text-align: center;
-      border-bottom: 2px solid #333;
+      border-bottom: 1px solid #333;
     }
+
     h1 {
       margin: 0;
-      font-size: 20px;
+      font-size: 22px;
+      color: #00ffee;
+      letter-spacing: 0.5px;
     }
+
     .tabs {
       display: flex;
-      background-color: #111;
-      border-bottom: 1px solid #444;
+      background-color: #131313;
+      border-bottom: 1px solid #333;
     }
+
     .tab {
-      padding: 10px 20px;
+      padding: 12px 24px;
       cursor: pointer;
-      background-color: #111;
-      border-right: 1px solid #333;
-      user-select: none;
+      color: #ccc;
+      transition: background 0.2s, color 0.2s;
+      border-right: 1px solid #222;
     }
+
+    .tab:hover {
+      background-color: #1c1c1c;
+      color: #00e0ff;
+    }
+
     .tab.active {
       background-color: #222;
       font-weight: bold;
-      color: #0ff;
+      color: #00ffee;
     }
+
     .tab-content {
       display: none;
       padding: 20px;
       height: 600px;
       overflow-y: auto;
-      background-color: #000;
-      white-space: pre-wrap;
+      background-color: #0b0b0b;
       border-top: 1px solid #222;
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.5;
     }
+
     .tab-content.active {
       display: block;
     }
-    .log-entry.error { color: red; }
-    .log-entry.info { color: #0f0; }
-    .log-entry.alert { color: yellow; }
-    .log-entry.stix { color: cyan; }
-    .log-entry.agent { color: orange; }
+
+    .log-entry {
+      margin-bottom: 5px;
+    }
+
+    .log-entry.error { color: #ff4d4d; }
+    .log-entry.info { color: #00ff00; }
+    .log-entry.alert { color: #ffff66; }
+    .log-entry.stix { color: #33ccff; }
+    .log-entry.agent { color: #ffa500; }
+
+    /* Scrollbar styling */
+    .tab-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .tab-content::-webkit-scrollbar-track {
+      background: #111;
+    }
+
+    .tab-content::-webkit-scrollbar-thumb {
+      background-color: #444;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1> Satellite Defense Toolkit — Live Dashboard</h1>
+    <h1>Satellite Defense Toolkit — Live Dashboard</h1>
   </header>
 
   <div class="tabs" id="tabBar">
@@ -67,9 +106,6 @@
   </div>
 
   <div id="logs" class="tab-content active"></div>
-  <!-- Los siguientes contenedores se agregan dinámicamente si se detectan -->
-  <!-- STIX: <div id="stix" class="tab-content"></div> -->
-  <!-- Agents: <div id="agents" class="tab-content"></div> -->
 
   <script>
     const tabBar = document.getElementById("tabBar");
@@ -84,7 +120,6 @@
 
     function createTabIfMissing(tabId, label) {
       if (!tabsShown.has(tabId)) {
-        // Add tab button
         const tab = document.createElement("div");
         tab.className = "tab";
         tab.dataset.tab = tabId;
@@ -92,7 +127,6 @@
         tab.onclick = () => showTab(tabId);
         tabBar.appendChild(tab);
 
-        // Add content container
         const content = document.createElement("div");
         content.id = tabId;
         content.className = "tab-content";

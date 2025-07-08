@@ -57,14 +57,14 @@ This component is designed to continuously monitor target firmware binaries or m
 - RSA-signed firmware blob verification
 - Secure remote hash pull and validation
 - STIX/TAXII threat indicator export
-- Full integration with REDOT dashboards and agent inventory
+- Full integration with dashboards and agent inventory
 - Auto-pivot and remediation trigger on mismatch detection
 
 ---
 
 ## 6. Integration Points
 
-- Compatible with REDOT dashboard for alert and status updates
+- Compatible with dashboard for alert and status updates
 - Works alongside telemetry modules for anomaly correlation
 - Feeds into STIX export modules for threat intelligence sharing
 

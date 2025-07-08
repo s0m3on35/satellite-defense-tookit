@@ -5,182 +5,178 @@
   <title>Satellite Defense Toolkit — Live Dashboard</title>
   <style>
     :root {
-      --bg: #0b0b0b;
-      --fg: #e0fefc;
-      --header-bg: #141414;
-      --tab-bg: #101010;
-      --tab-active: #222;
-      --tab-hover: #181818;
-      --log-error: #ff5c5c;
-      --log-info: #33ff33;
-      --log-alert: #ffff66;
-      --log-stix: #33ccff;
-      --log-agent: #ffaa33;
-      --ws-connected: #00ff99;
-      --ws-disconnected: #ff3333;
-    }
+      --bg-dark: #101417;
+      --fg-dark: #d1f2ff;
+      --accent-dark: #57d9a3;
+      --header-dark: #1a1f23;
+      --input-dark: #0f1a1e;
+      --log-line-dark: #182228;
 
-    .light {
-      --bg: #f8f8f8;
-      --fg: #111;
-      --header-bg: #e0e0e0;
-      --tab-bg: #ddd;
-      --tab-active: #bbb;
-      --tab-hover: #ccc;
-      --log-error: #b00020;
-      --log-info: #006600;
-      --log-alert: #aa8800;
-      --log-stix: #005577;
-      --log-agent: #774400;
-      --ws-connected: #007744;
-      --ws-disconnected: #cc0000;
-    }
-
-    * {
-      box-sizing: border-box;
+      --bg-light: #f8f8f8;
+      --fg-light: #222;
+      --accent-light: #2b6cb0;
+      --header-light: #e0e0e0;
+      --input-light: #f0f0f0;
+      --log-line-light: #dddddd;
     }
 
     body {
       margin: 0;
-      font-family: 'Courier New', Courier, monospace;
-      background-color: var(--bg);
-      color: var(--fg);
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      background-color: var(--bg-dark);
+      color: var(--fg-dark);
       display: flex;
       flex-direction: column;
       height: 100vh;
-      overflow: hidden;
+    }
+
+    body.light {
+      background-color: var(--bg-light);
+      color: var(--fg-light);
     }
 
     header {
-      background-color: var(--header-bg);
-      padding: 12px 20px;
+      padding: 16px 24px;
+      background-color: var(--header-dark);
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid #333;
     }
 
+    body.light header {
+      background-color: var(--header-light);
+    }
+
     h1 {
       margin: 0;
       font-size: 18px;
+      font-weight: 500;
     }
 
-    .actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    button {
+    .actions button {
+      background: transparent;
+      border: 1px solid var(--accent-dark);
+      color: var(--accent-dark);
       padding: 6px 12px;
-      background-color: #333;
-      color: var(--fg);
-      border: 1px solid #555;
+      border-radius: 4px;
+      margin-left: 10px;
       cursor: pointer;
+      font-family: inherit;
     }
 
-    button:hover {
-      background-color: #444;
+    body.light .actions button {
+      border-color: var(--accent-light);
+      color: var(--accent-light);
     }
 
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background-color: var(--ws-disconnected);
-      margin-left: 8px;
+    .actions button:hover {
+      background-color: rgba(255, 255, 255, 0.05);
     }
 
     .tabs {
       display: flex;
-      background-color: var(--tab-bg);
       border-bottom: 1px solid #333;
     }
 
     .tab {
-      padding: 10px 16px;
+      padding: 10px 18px;
       cursor: pointer;
-      color: #aaa;
-      background-color: var(--tab-bg);
-      border-right: 1px solid #222;
-    }
-
-    .tab:hover {
-      background-color: var(--tab-hover);
-      color: var(--fg);
+      color: var(--accent-dark);
+      border-bottom: 3px solid transparent;
     }
 
     .tab.active {
-      background-color: var(--tab-active);
       font-weight: bold;
-      color: var(--fg);
+      border-color: var(--accent-dark);
     }
 
-    .content-wrapper {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+    body.light .tab {
+      color: var(--accent-light);
+    }
+
+    body.light .tab.active {
+      border-color: var(--accent-light);
     }
 
     .tab-content {
-      display: none;
-      flex-grow: 1;
-      padding: 15px;
+      flex: 1;
       overflow-y: auto;
-      background-color: var(--bg);
+      padding: 16px 24px;
+      background-color: var(--bg-dark);
       white-space: pre-wrap;
-      font-size: 14px;
-      line-height: 1.5;
     }
 
-    .tab-content.active {
-      display: block;
+    body.light .tab-content {
+      background-color: var(--bg-light);
     }
 
-    .log-entry { margin-bottom: 4px; }
-    .log-entry.error { color: var(--log-error); }
-    .log-entry.info { color: var(--log-info); }
-    .log-entry.alert { color: var(--log-alert); }
-    .log-entry.stix { color: var(--log-stix); }
-    .log-entry.agent { color: var(--log-agent); }
+    .log-entry {
+      padding: 6px 12px;
+      background-color: var(--log-line-dark);
+      border-left: 3px solid var(--accent-dark);
+      margin-bottom: 6px;
+    }
 
-    #command-box {
+    body.light .log-entry {
+      background-color: var(--log-line-light);
+      border-left-color: var(--accent-light);
+    }
+
+    .log-entry.error { border-left-color: #e57373; }
+    .log-entry.info { border-left-color: #81c784; }
+    .log-entry.alert { border-left-color: #ffb74d; }
+
+    .input-row {
       display: flex;
-      padding: 8px;
-      background: #111;
+      padding: 12px 24px;
+      background-color: var(--input-dark);
       border-top: 1px solid #333;
     }
 
-    #command-input {
-      flex-grow: 1;
-      padding: 6px;
-      background: #000;
-      border: 1px solid #333;
-      color: #0f0;
-      font-family: inherit;
-      font-size: 14px;
+    body.light .input-row {
+      background-color: var(--input-light);
     }
 
-    #command-send {
-      margin-left: 10px;
-      padding: 6px 14px;
-      background: #333;
-      color: var(--fg);
-      border: 1px solid #555;
+    input[type="text"] {
+      flex-grow: 1;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background: #000;
+      color: #0f0;
+    }
+
+    body.light input[type="text"] {
+      background: #fff;
+      color: #000;
+    }
+
+    button.send-btn {
+      margin-left: 12px;
+      padding: 8px 16px;
+      font-family: inherit;
+      border-radius: 4px;
+      border: none;
+      background-color: var(--accent-dark);
+      color: #000;
+      cursor: pointer;
+    }
+
+    body.light button.send-btn {
+      background-color: var(--accent-light);
     }
 
     .tab-content::-webkit-scrollbar {
-      width: 10px;
-    }
-
-    .tab-content::-webkit-scrollbar-track {
-      background: #111;
+      width: 8px;
     }
 
     .tab-content::-webkit-scrollbar-thumb {
-      background-color: #444;
-      border-radius: 4px;
+      background-color: #555;
     }
   </style>
 </head>
@@ -191,7 +187,6 @@
       <button onclick="toggleTheme()">Toggle Theme</button>
       <button onclick="exportLogs()">Export Logs</button>
       <button onclick="clearLogs()">Clear Logs</button>
-      <div class="status-dot" id="wsStatus"></div>
     </div>
   </header>
 
@@ -199,50 +194,48 @@
     <div class="tab active" data-tab="logs" onclick="showTab('logs')">Logs</div>
   </div>
 
-  <div class="content-wrapper">
-    <div id="logs" class="tab-content active"></div>
-    <!-- Más pestañas se agregan dinámicamente -->
-  </div>
+  <div class="tab-content" id="logs"></div>
 
-  <div id="command-box">
-    <input type="text" id="command-input" placeholder="Enter command..." />
-    <button id="command-send" onclick="sendCommand()">Send</button>
+  <div class="input-row">
+    <input id="commandInput" type="text" placeholder="Enter command..." />
+    <button class="send-btn" onclick="sendCommand()">Send</button>
   </div>
 
   <script>
+    const logsContainer = document.getElementById("logs");
     const tabBar = document.getElementById("tabBar");
     const tabsShown = new Set(["logs"]);
     let logsBuffer = [];
-    let ws;
 
     function showTab(tabId) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
-      document.getElementById(tabId).classList.add('active');
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
+      document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add("active");
+      document.getElementById(tabId).style.display = "block";
     }
 
-    function createTabIfMissing(tabId, label) {
-      if (!tabsShown.has(tabId)) {
+    function createTabIfMissing(id, label) {
+      if (!tabsShown.has(id)) {
         const tab = document.createElement("div");
         tab.className = "tab";
-        tab.dataset.tab = tabId;
+        tab.dataset.tab = id;
         tab.textContent = label;
-        tab.onclick = () => showTab(tabId);
+        tab.onclick = () => showTab(id);
         tabBar.appendChild(tab);
 
         const content = document.createElement("div");
-        content.id = tabId;
         content.className = "tab-content";
-        document.querySelector('.content-wrapper').appendChild(content);
+        content.id = id;
+        content.style.display = "none";
+        document.body.insertBefore(content, document.querySelector(".input-row"));
 
-        tabsShown.add(tabId);
+        tabsShown.add(id);
       }
     }
 
     function appendLog(containerId, message, type = 'info') {
       createTabIfMissing(containerId, capitalize(containerId));
-      const div = document.createElement('div');
+      const div = document.createElement("div");
       div.className = `log-entry ${type}`;
       div.textContent = `[${new Date().toISOString()}] ${type.toUpperCase()}: ${message}`;
       const container = document.getElementById(containerId);
@@ -251,80 +244,64 @@
       if (containerId === 'logs') logsBuffer.push(div.textContent);
     }
 
-    function setContent(containerId, content, type = 'json') {
-      createTabIfMissing(containerId, capitalize(containerId));
-      const container = document.getElementById(containerId);
-      container.textContent = (type === 'json') ? JSON.stringify(content, null, 2) : content;
-      container.scrollTop = 0;
+    function capitalize(s) {
+      return s.charAt(0).toUpperCase() + s.slice(1);
     }
 
-    function capitalize(str) {
-      return str.charAt(0).toUpperCase() + str.slice(1);
-    }
+    function connectWS() {
+      const ws = new WebSocket("ws://localhost:8765");
 
-    function connectWebSocket() {
-      ws = new WebSocket("ws://localhost:8765");
-
-      ws.onopen = () => {
-        document.getElementById("wsStatus").style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--ws-connected');
-      };
-
-      ws.onmessage = (event) => {
+      ws.onmessage = e => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse(e.data);
           const type = (data.type || 'info').toLowerCase();
 
           if (type === 'stix') {
-            setContent('stix', data.data);
-          } else if (type === 'agent') {
-            setContent('agents', data.data);
+            createTabIfMissing('stix', 'STIX');
+            document.getElementById('stix').textContent = JSON.stringify(data.data, null, 2);
+            showTab('stix');
           } else {
             appendLog('logs', data.message || JSON.stringify(data), type);
           }
-        } catch (err) {
+        } catch {
           appendLog('logs', 'Malformed WebSocket message.', 'error');
         }
       };
 
       ws.onclose = () => {
-        document.getElementById("wsStatus").style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--ws-disconnected');
-        appendLog('logs', '[WebSocket connection closed - retrying in 3s]', 'alert');
-        setTimeout(connectWebSocket, 3000);
-      };
-
-      ws.onerror = () => {
-        appendLog('logs', '[WebSocket error]', 'error');
+        appendLog('logs', 'WebSocket connection closed. Retrying...', 'alert');
+        setTimeout(connectWS, 3000);
       };
     }
 
     function toggleTheme() {
-      document.body.classList.toggle('light');
+      document.body.classList.toggle("light");
     }
 
     function exportLogs() {
       const blob = new Blob([logsBuffer.join("\n")], { type: "text/plain" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "dashboard_logs.txt";
+      link.download = "logs.txt";
       link.click();
     }
 
     function clearLogs() {
-      document.getElementById("logs").innerHTML = "";
+      logsContainer.innerHTML = "";
       logsBuffer = [];
     }
 
     function sendCommand() {
-      const input = document.getElementById("command-input");
-      const command = input.value.trim();
-      if (command && ws && ws.readyState === 1) {
-        ws.send(JSON.stringify({ type: "command", payload: command }));
-        appendLog('logs', `Command sent: ${command}`, 'info');
+      const input = document.getElementById("commandInput");
+      const cmd = input.value.trim();
+      if (cmd) {
+        appendLog("logs", `Command issued: ${cmd}`, "info");
+        // Add WebSocket send(cmd) here if needed
         input.value = "";
       }
     }
 
-    connectWebSocket();
+    connectWS();
   </script>
 </body>
 </html>

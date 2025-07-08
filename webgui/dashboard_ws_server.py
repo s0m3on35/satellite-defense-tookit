@@ -59,7 +59,7 @@ async def handler(websocket):
         connected_clients.remove(websocket)
 
 async def main():
-    print("[✓] Unified Dashboard WebSocket Server started on ws://0.0.0.0:8765")
+    print("Unified Dashboard WebSocket Server started on ws://0.0.0.0:8765")
     server = await websockets.serve(handler, "0.0.0.0", 8765)
     await asyncio.gather(server.wait_closed(), stix_stream_broadcast())
 

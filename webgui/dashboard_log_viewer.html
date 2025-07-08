@@ -4,6 +4,38 @@
   <meta charset="UTF-8" />
   <title>Satellite Defense Toolkit — Live Dashboard</title>
   <style>
+    :root {
+      --bg: #0b0b0b;
+      --fg: #e0fefc;
+      --header-bg: #141414;
+      --tab-bg: #101010;
+      --tab-active: #222;
+      --tab-hover: #181818;
+      --log-error: #ff5c5c;
+      --log-info: #33ff33;
+      --log-alert: #ffff66;
+      --log-stix: #33ccff;
+      --log-agent: #ffaa33;
+      --ws-connected: #00ff99;
+      --ws-disconnected: #ff3333;
+    }
+
+    .light {
+      --bg: #f8f8f8;
+      --fg: #111;
+      --header-bg: #e0e0e0;
+      --tab-bg: #ddd;
+      --tab-active: #bbb;
+      --tab-hover: #ccc;
+      --log-error: #b00020;
+      --log-info: #006600;
+      --log-alert: #aa8800;
+      --log-stix: #005577;
+      --log-agent: #774400;
+      --ws-connected: #007744;
+      --ws-disconnected: #cc0000;
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -11,8 +43,8 @@
     body {
       margin: 0;
       font-family: 'Courier New', Courier, monospace;
-      background-color: #0b0b0b;
-      color: #e0fefc;
+      background-color: var(--bg);
+      color: var(--fg);
       display: flex;
       flex-direction: column;
       height: 100vh;
@@ -20,60 +52,83 @@
     }
 
     header {
-      background-color: #141414;
-      padding: 16px;
-      text-align: center;
-      border-bottom: 1px solid #2e2e2e;
-      flex-shrink: 0;
+      background-color: var(--header-bg);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #333;
     }
 
-    header h1 {
+    h1 {
       margin: 0;
-      font-size: 20px;
-      color: #00ffe0;
-      letter-spacing: 0.4px;
+      font-size: 18px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button {
+      padding: 6px 12px;
+      background-color: #333;
+      color: var(--fg);
+      border: 1px solid #555;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #444;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--ws-disconnected);
+      margin-left: 8px;
     }
 
     .tabs {
       display: flex;
-      background-color: #101010;
+      background-color: var(--tab-bg);
       border-bottom: 1px solid #333;
-      flex-shrink: 0;
     }
 
     .tab {
-      padding: 12px 20px;
+      padding: 10px 16px;
       cursor: pointer;
       color: #aaa;
-      background-color: #101010;
+      background-color: var(--tab-bg);
       border-right: 1px solid #222;
-      transition: background 0.2s, color 0.2s;
     }
 
     .tab:hover {
-      background-color: #181818;
-      color: #00e0ff;
+      background-color: var(--tab-hover);
+      color: var(--fg);
     }
 
     .tab.active {
-      background-color: #222;
+      background-color: var(--tab-active);
       font-weight: bold;
-      color: #00ffe0;
+      color: var(--fg);
     }
 
     .content-wrapper {
       flex-grow: 1;
-      overflow: hidden;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     .tab-content {
       display: none;
-      padding: 20px;
-      overflow-y: auto;
       flex-grow: 1;
-      background-color: #000;
+      padding: 15px;
+      overflow-y: auto;
+      background-color: var(--bg);
       white-space: pre-wrap;
       font-size: 14px;
       line-height: 1.5;
@@ -83,15 +138,37 @@
       display: block;
     }
 
-    .log-entry {
-      margin-bottom: 5px;
+    .log-entry { margin-bottom: 4px; }
+    .log-entry.error { color: var(--log-error); }
+    .log-entry.info { color: var(--log-info); }
+    .log-entry.alert { color: var(--log-alert); }
+    .log-entry.stix { color: var(--log-stix); }
+    .log-entry.agent { color: var(--log-agent); }
+
+    #command-box {
+      display: flex;
+      padding: 8px;
+      background: #111;
+      border-top: 1px solid #333;
     }
 
-    .log-entry.error { color: #ff5c5c; }
-    .log-entry.info { color: #33ff33; }
-    .log-entry.alert { color: #ffff66; }
-    .log-entry.stix { color: #33ccff; }
-    .log-entry.agent { color: #ffaa33; }
+    #command-input {
+      flex-grow: 1;
+      padding: 6px;
+      background: #000;
+      border: 1px solid #333;
+      color: #0f0;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    #command-send {
+      margin-left: 10px;
+      padding: 6px 14px;
+      background: #333;
+      color: var(--fg);
+      border: 1px solid #555;
+    }
 
     .tab-content::-webkit-scrollbar {
       width: 10px;
@@ -104,13 +181,18 @@
     .tab-content::-webkit-scrollbar-thumb {
       background-color: #444;
       border-radius: 4px;
-      border: 2px solid #111;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Satellite Defense Toolkit — Live Dashboard</h1>
+    <div class="actions">
+      <button onclick="toggleTheme()">Toggle Theme</button>
+      <button onclick="exportLogs()">Export Logs</button>
+      <button onclick="clearLogs()">Clear Logs</button>
+      <div class="status-dot" id="wsStatus"></div>
+    </div>
   </header>
 
   <div class="tabs" id="tabBar">
@@ -119,11 +201,19 @@
 
   <div class="content-wrapper">
     <div id="logs" class="tab-content active"></div>
+    <!-- Más pestañas se agregan dinámicamente -->
+  </div>
+
+  <div id="command-box">
+    <input type="text" id="command-input" placeholder="Enter command..." />
+    <button id="command-send" onclick="sendCommand()">Send</button>
   </div>
 
   <script>
     const tabBar = document.getElementById("tabBar");
     const tabsShown = new Set(["logs"]);
+    let logsBuffer = [];
+    let ws;
 
     function showTab(tabId) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -158,6 +248,7 @@
       const container = document.getElementById(containerId);
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
+      if (containerId === 'logs') logsBuffer.push(div.textContent);
     }
 
     function setContent(containerId, content, type = 'json') {
@@ -172,7 +263,11 @@
     }
 
     function connectWebSocket() {
-      const ws = new WebSocket("ws://localhost:8765");
+      ws = new WebSocket("ws://localhost:8765");
+
+      ws.onopen = () => {
+        document.getElementById("wsStatus").style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--ws-connected');
+      };
 
       ws.onmessage = (event) => {
         try {
@@ -192,6 +287,7 @@
       };
 
       ws.onclose = () => {
+        document.getElementById("wsStatus").style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--ws-disconnected');
         appendLog('logs', '[WebSocket connection closed - retrying in 3s]', 'alert');
         setTimeout(connectWebSocket, 3000);
       };
@@ -199,6 +295,33 @@
       ws.onerror = () => {
         appendLog('logs', '[WebSocket error]', 'error');
       };
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('light');
+    }
+
+    function exportLogs() {
+      const blob = new Blob([logsBuffer.join("\n")], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "dashboard_logs.txt";
+      link.click();
+    }
+
+    function clearLogs() {
+      document.getElementById("logs").innerHTML = "";
+      logsBuffer = [];
+    }
+
+    function sendCommand() {
+      const input = document.getElementById("command-input");
+      const command = input.value.trim();
+      if (command && ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: "command", payload: command }));
+        appendLog('logs', `Command sent: ${command}`, 'info');
+        input.value = "";
+      }
     }
 
     connectWebSocket();

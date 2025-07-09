@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Route: satellite_defense_toolkit_gui.py (God-mode Enhanced)
+# Route: satellite_defense_toolkit_gui.py
 
 import tkinter as tk
 from tkinter import ttk, filedialog, simpledialog
@@ -41,13 +41,20 @@ MODULE_GROUPS = {
         "Firmware Timeline Builder": "modules/forensics/firmware_timeline_builder.py",
         "Memwatch Agent": "modules/forensics/memwatch_agent.py",
         "OTA Packet Analyzer": "modules/forensics/ota_packet_analyzer.py"
+    },
+    "Attacks": {
+        "OTA Firmware Injector": "modules/attacks/ota_firmware_injector.py",
+        "Firmware Persistent Implant": "modules/attacks/firmware_persistent_implant.py",
+        "GNSS Spoofer": "modules/attacks/gnss_spoofer.py",
+        "SATCOM C2 Hijacker": "modules/attacks/satcom_c2_hijacker.py",
+        "Payload Launcher": "modules/attacks/payload_launcher.py"
     }
 }
 
 class SatelliteDefenseToolkitGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Satellite Defense Toolkit — God Mode")
+        self.root.title("Satellite Defense Toolkit")
         self.root.geometry("1200x800")
         self.root.configure(bg="#0f0f0f")
         self.ws = None
@@ -59,14 +66,18 @@ class SatelliteDefenseToolkitGUI:
     def connect_to_websocket(self):
         try:
             self.ws = websocket.create_connection(DASHBOARD_WS_URL, timeout=3)
-            self.send_dashboard_event("gui_online", "GUI launched in God mode")
+            self.send_dashboard_event("gui_online", "GUI launched")
         except Exception as e:
             self.log(f"[WebSocket] Offline: {e}")
 
     def send_dashboard_event(self, evt_type, msg):
         if self.ws:
             try:
-                self.ws.send(json.dumps({"timestamp": time.time(), "type": evt_type, "message": msg}))
+                self.ws.send(json.dumps({
+                    "timestamp": time.time(),
+                    "type": evt_type,
+                    "message": msg
+                }))
             except:
                 self.ws = None
 

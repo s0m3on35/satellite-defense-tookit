@@ -1,5 +1,3 @@
-# Ruta: modules/telemetry_lstm_monitor.py
-
 import argparse
 import logging
 import yaml
@@ -11,10 +9,9 @@ from datetime import datetime
 import socket
 import platform
 import websocket
-from keras.models import Sequential, load_model
-from keras.layers import LSTM, Dense
-from sklearn.preprocessing import MinMaxScaler
 import joblib
+import subprocess
+from keras.models import load_model
 
 def load_config(path):
     with open(path, 'r') as f:
@@ -34,35 +31,13 @@ def simulate_telemetry_stream(n_points=150):
     data = np.vstack([normal, anomaly])
     return data.flatten()
 
-def prepare_lstm_data(data, look_back):
-    scaler = MinMaxScaler()
-    data_scaled = scaler.fit_transform(data.reshape(-1, 1))
-    X, y = [], []
-    for i in range(len(data_scaled) - look_back):
-        X.append(data_scaled[i:i+look_back])
-        y.append(data_scaled[i+look_back])
-    return np.array(X), np.array(y), scaler
+def detect_anomalies_lstm(data, look_back=10, threshold=2.0, model_path="models/lstm_model.h5", scaler_path="models/lstm_scaler.pkl"):
+    if not os.path.exists(model_path) or not os.path.exists(scaler_path):
+        logging.warning("Model or scaler not found. Running fallback training...")
+        subprocess.run(["python", "models/train_lstm_model.py"], check=True)
 
-def build_and_train_model(X, y):
-    model = Sequential()
-    model.add(LSTM(20, input_shape=(X.shape[1], 1)))
-    model.add(Dense(1))
-    model.compile(loss='mean_squared_error', optimizer='adam')
-    model.fit(X, y, epochs=10, batch_size=1, verbose=0)
-    return model
-
-def detect_anomalies_lstm(data, look_back, threshold, model_path, scaler_path):
-    if os.path.exists(model_path) and os.path.exists(scaler_path):
-        model = load_model(model_path)
-        scaler = joblib.load(scaler_path)
-        logging.info("[✓] Loaded existing model and scaler")
-    else:
-        logging.warning("[!] No model/scaler found — training from scratch")
-        X, y, scaler = prepare_lstm_data(data, look_back)
-        model = build_and_train_model(X, y)
-        model.save(model_path)
-        joblib.dump(scaler, scaler_path)
-        logging.info("[+] New model trained and saved")
+    model = load_model(model_path)
+    scaler = joblib.load(scaler_path)
 
     data_scaled = scaler.transform(data.reshape(-1, 1))
     X, y = [], []
@@ -80,6 +55,14 @@ def detect_anomalies_lstm(data, look_back, threshold, model_path, scaler_path):
     padded_z = np.concatenate((np.zeros(look_back), z_scores))
     return padded_anomalies, padded_z
 
+def detect_anomalies_zscore(data, threshold):
+    mean = np.mean(data)
+    std = np.std(data)
+    rolling_std = np.std(data[-30:])
+    z_scores = (data - mean) / (rolling_std if rolling_std > 0 else std)
+    anomalies = np.abs(z_scores) > threshold
+    return anomalies, z_scores
+
 def plot_anomalies(data, anomalies, output_path):
     plt.figure(figsize=(10, 4))
     plt.plot(data, label='Telemetry')
@@ -95,7 +78,7 @@ def send_ws_alert(ws_url, alert):
         ws.send(json.dumps(alert))
         ws.close()
     except Exception as e:
-        logging.warning(f"[WebSocket] Alert failed: {e}")
+        logging.warning(f"WebSocket alert failed: {e}")
 
 def log_to_agent_inventory(alert):
     os.makedirs("recon", exist_ok=True)
@@ -154,16 +137,16 @@ def main(args):
     telemetry_data = simulate_telemetry_stream()
 
     threshold = config.get("threshold", 3.0)
-    method = config.get("method", "lstm")
+    method = config.get("method", "zscore")
     look_back = config.get("look_back", 10)
     ws_url = config.get("ws_url", "ws://localhost:8765")
-    model_path = config.get("model_path", "models/lstm_model.h5")
-    scaler_path = config.get("scaler_path", "models/scaler.pkl")
+    model_path = "models/lstm_model.h5"
+    scaler_path = "models/lstm_scaler.pkl"
 
-    if method != "lstm":
-        raise NotImplementedError("Only LSTM detection is supported in fallback version.")
-
-    anomalies, z_scores = detect_anomalies_lstm(telemetry_data, look_back, threshold, model_path, scaler_path)
+    if method == "lstm":
+        anomalies, z_scores = detect_anomalies_lstm(telemetry_data, look_back, threshold, model_path, scaler_path)
+    else:
+        anomalies, z_scores = detect_anomalies_zscore(telemetry_data, threshold)
 
     os.makedirs("results", exist_ok=True)
     alert_log = []
@@ -189,7 +172,7 @@ def main(args):
     logging.info(f"[✓] {len(alert_log)} anomalies detected. Reports exported.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Telemetry Anomaly Monitor (LSTM)")
+    parser = argparse.ArgumentParser(description="Telemetry Anomaly Monitor (LSTM/Z-score)")
     parser.add_argument("--config", default="config/config.yaml", help="YAML config path")
     parser.add_argument("--log", default="logs/telemetry_monitor.log", help="Log file path")
     args = parser.parse_args()

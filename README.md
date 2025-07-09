@@ -1,24 +1,25 @@
 # Satellite Defense Toolkit
 
-> A modular real-time defense and forensics suite for GNSS, SATCOM, and aerospace-critical infrastructure. Detects spoofing, jamming, firmware manipulation, and telemetry anomalies. Includes threat analysis, C2 controls, integrity monitors, STIX integration, and full operational dashboard.
+A modular real-time defense and forensics suite for GNSS, SATCOM, and aerospace-critical infrastructure. Detects spoofing, jamming, firmware manipulation, and telemetry anomalies. Includes threat analysis, C2 controls, integrity monitors, STIX integration, and a full operational dashboard.
 
 ---
 
 ## Key Modules (Selected)
 
-| Category      | Module                                | Description |
-|---------------|----------------------------------------|-------------|
-| GNSS Defense  | `gnss_ai_anomaly_detector.py`         | Detects GNSS spoofing using Isolation Forest |
-| RF Defense    | `rf_jammer_locator.py`                | SDR heatmap jammer localization |
-| Firmware      | `firmware_watcher_agent.py`           | HMAC-based firmware integrity monitoring |
-| Telemetry     | `telemetry_lstm_monitor.py`           | Detects anomalies via LSTM neural net |
-| Dashboard     | `satellite_defense_toolkit_gui.py`    | Central command dashboard (WebSocket, UI) |
+| Category         | Module                                | Description |
+|------------------|----------------------------------------|-------------|
+| GNSS Defense     | `gnss_ai_anomaly_detector.py`         | Detects GNSS spoofing using Isolation Forest |
+| RF Defense       | `rf_jammer_locator.py`                | SDR heatmap jammer localization |
+| Firmware         | `firmware_watcher_agent.py`           | HMAC-based firmware integrity monitoring |
+| Telemetry        | `telemetry_lstm_monitor.py`           | Detects anomalies via LSTM neural network |
+| Dashboard        | `satellite_defense_toolkit_gui.py`    | Central command dashboard (WebSocket, GUI) |
+| Advanced Analysis| `binary_diff_engine.py`               | Binary differential engine for firmware forensics |
 
 ---
 
 ## How to Use
 
-Available in:
+Documentation is available in:
 
 ```
 docs/wiki/
@@ -34,6 +35,7 @@ docs/wiki/
 ## Full Module Categories
 
 ### Defense Modules
+
 - `binary_integrity_watcher.py`
 - `firewall_rule_generator.py`
 - `firmware_integrity_watcher.py`
@@ -52,11 +54,25 @@ docs/wiki/
 - `telemetry_guardian.py`
 
 ### Forensics Modules
+
 - `firmware_timeline_builder.py`
 - `memwatch_agent.py`
 - `ota_packet_analyzer.py`
 
+### Advanced Analysis
+
+- `binary_diff_engine.py`
+- `elf_section_analyzer.py`
+- `firmware_cfg_exporter.py`
+- `firmware_obfuscation_classifier.py`
+- `firmware_recovery_toolkit.py`
+- `heap_stack_pattern_scanner.py`
+- `syscall_extractor.py`
+- `dynamic_string_decoder.py`
+- `forensic_event_correlator.py`
+
 ### Firmware Analysis
+
 - `firmware_crypto_auditor.py`
 - `firmware_pcap_export.py`
 - `firmware_stix_export.py`
@@ -64,6 +80,7 @@ docs/wiki/
 - `firmware_backdoor_scanner.py`
 
 ### GNSS/SATCOM Threat Simulation & Attacks
+
 - `gnss_spoofer.py`
 - `rf_jammer_dos.py`
 - `satcom_c2_hijacker.py`
@@ -73,6 +90,7 @@ docs/wiki/
 - `ota_firmware_injector.py`
 
 ### Intelligence / Threat Detection
+
 - `stix_threat_matcher.py`
 - `threat_feed_watcher.py`
 - `firmware_cve_mapper.py`
@@ -80,6 +98,7 @@ docs/wiki/
 - `mitre_mapper.py`
 
 ### AI / Anomaly Detection
+
 - `entropy_analyzer.py`
 - `entropy_stix_chain.py`
 - `yara_firmware_scanner.py`
@@ -89,11 +108,13 @@ docs/wiki/
 - `gnss_ai_anomaly_detector.py`
 
 ### Copilot / C2 Control
+
 - `copilot_ai.py`
 - `agent_commander.py`
 - `agent_fingerprint_logger.py`
 
 ### Dashboard / GUI
+
 - `dashboard_ws_server.py`
 - `ws_live_dashboard.py`
 - `mapview_dashboard.py`
@@ -104,6 +125,7 @@ docs/wiki/
 - `mitre_tracker.py`
 
 ### Visualization / Statistics
+
 - `attack_frequency_heatmap.py`
 - `event_visualizer.py`
 
@@ -111,24 +133,24 @@ docs/wiki/
 
 ## Documentation
 
-Available in:
+Detailed usage and configuration available in:
 
 ```
 docs/wiki/
-- Overview.md
-- Anomaly_Detection.md
-- Firmware_Security.md
-- Configuration.md
-- index.html
+|- Overview.md
+|- Anomaly_Detection.md
+|- Firmware_Security.md
+|- Configuration.md
+|- index.html
 ```
 
 ---
 
-## GitHub Pages
+## GitHub Repository
 
-Documentation and diagrams available at:
+Main repository and documentation:
 
-**https://github.com/s0m3on35/satellite-defense-tookit**
+https://github.com/s0m3on35/satellite-defense-tookit
 
 ---
 

@@ -1,3 +1,5 @@
+# modules/rf_jammer_locator.py
+
 import argparse
 import logging
 import os
@@ -82,7 +84,7 @@ def main(args):
         logging.warning("rtl_power not available, using simulated scan")
         freqs, signal = simulate_scan(freq_range)
     else:
-        freqs, signal = simulate_scan(freq_range)  # Replace with real parser
+        freqs, signal = simulate_scan(freq_range)  # Replace with real parser if available
 
     peak_freq = float(freqs[np.argmax(signal)])
     peak_db = float(np.max(signal))

@@ -1,3 +1,5 @@
+# modules/firmware_backdoor_scanner.py
+
 import os
 import json
 import hashlib

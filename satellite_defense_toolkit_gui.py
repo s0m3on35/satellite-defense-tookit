@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # Route: satellite_defense_toolkit_gui.py (God-mode Enhanced)
 
@@ -14,26 +13,41 @@ import websocket
 DASHBOARD_WS_URL = "ws://localhost:8765"
 AUDIT_TRAIL_LOG = "logs/audit_trail.jsonl"
 
-# Import all modules as defined in your project
 MODULE_GROUPS = {
     "Defense": {
         "Binary Integrity Watcher": "modules/defense/binary_integrity_watcher.py",
         "Firewall Rule Generator": "modules/defense/firewall_rule_generator.py",
-        "Firmware Integrity Watcher": "modules/defense/firmware_integrity_watcher.py"
-        # shortened for brevity
+        "Firmware Integrity Watcher": "modules/defense/firmware_integrity_watcher.py",
+        "Firmware Memory Shield": "modules/defense/firmware_memory_shield.py",
+        "Firmware Rollback Protector": "modules/defense/firmware_rollback_protector.py",
+        "Firmware Signature Validator": "modules/defense/firmware_signature_validator.py",
+        "GNSS Spoof Guard": "modules/defense/gnss_spoof_guard.py",
+        "Interface Integrity Monitor": "modules/defense/interface_integrity_monitor.py",
+        "Kernel Module Guard": "modules/defense/kernel_module_guard.py",
+        "Live Integrity Watcher": "modules/defense/live_integrity_watcher.py",
+        "OTA Guard": "modules/defense/ota_guard.py",
+        "OTA Stream Guard": "modules/defense/ota_stream_guard.py",
+        "RF Injection Barrier": "modules/defense/rf_injection_barrier.py",
+        "Secure Update Guard": "modules/defense/secure_update_guard.py",
+        "System Call Anomaly Watcher": "modules/defense/system_call_anomaly_watcher.py",
+        "Telemetry Guardian": "modules/defense/telemetry_guardian.py"
     },
     "AI & Analysis": {
         "Threat Classifier AI": "modules/ai/threat_classifier.py",
         "Threat Summary LLM": "modules/ai/threat_summary_llm.py",
         "AI Copilot Engine": "modules/copilot/copilot_ai.py"
+    },
+    "Forensics": {
+        "Firmware Timeline Builder": "modules/forensics/firmware_timeline_builder.py",
+        "Memwatch Agent": "modules/forensics/memwatch_agent.py",
+        "OTA Packet Analyzer": "modules/forensics/ota_packet_analyzer.py"
     }
-    # Add other groups as needed
 }
 
 class SatelliteDefenseToolkitGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Satellite Defense Toolkit â God Mode")
+        self.root.title("Satellite Defense Toolkit — God Mode")
         self.root.geometry("1200x800")
         self.root.configure(bg="#0f0f0f")
         self.ws = None
@@ -155,7 +169,7 @@ class SatelliteDefenseToolkitGUI:
         if path:
             with open(path, "w") as f:
                 f.write(self.output.get("1.0", tk.END))
-            self.log(f"[â] Saved to {path}")
+            self.log(f"[✓] Saved to {path}")
 
     def search_modules(self, *args):
         query = self.search_var.get().lower()
@@ -169,4 +183,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SatelliteDefenseToolkitGUI(root)
     root.mainloop()
-

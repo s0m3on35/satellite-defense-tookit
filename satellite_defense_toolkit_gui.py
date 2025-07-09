@@ -36,6 +36,17 @@ MODULE_GROUPS = {
         "Memwatch Agent": "modules/forensics/memwatch_agent.py",
         "OTA Packet Analyzer": "modules/forensics/ota_packet_analyzer.py"
     },
+    "Advanced Analysis": {
+        "Binary Diff Engine": "modules/analysis/binary_diff_engine.py",
+        "ELF Section Analyzer": "modules/analysis/elf_section_analyzer.py",
+        "Firmware CFG Exporter": "modules/analysis/firmware_cfg_exporter.py",
+        "Firmware Obfuscation Classifier": "modules/analysis/firmware_obfuscation_classifier.py",
+        "Firmware Recovery Toolkit": "modules/analysis/firmware_recovery_toolkit.py",
+        "Heap/Stack Pattern Scanner": "modules/analysis/heap_stack_pattern_scanner.py",
+        "Syscall Extractor": "modules/analysis/syscall_extractor.py",
+        "Dynamic String Decoder": "modules/analysis/dynamic_string_decoder.py",
+        "Forensic Event Correlator": "modules/analysis/forensic_event_correlator.py"
+    },
     "Firmware": {
         "Firmware Crypto Auditor": "modules/firmware/firmware_crypto_auditor.py",
         "Firmware PCAP Export": "modules/firmware/firmware_pcap_export.py",

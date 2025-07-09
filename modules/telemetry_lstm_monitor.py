@@ -1,5 +1,4 @@
 # modules/telemetry_lstm_monitor.py
-
 import argparse
 import logging
 import yaml
@@ -11,7 +10,8 @@ from datetime import datetime
 import socket
 import platform
 import websocket
-from keras.models import Sequential
+import joblib
+from keras.models import load_model, Sequential
 from keras.layers import LSTM, Dense
 from sklearn.preprocessing import MinMaxScaler
 
@@ -33,28 +33,30 @@ def simulate_telemetry_stream(n_points=150):
     data = np.vstack([normal, anomaly])
     return data.flatten()
 
-def detect_anomalies_zscore(data, threshold):
-    mean = np.mean(data)
-    std = np.std(data)
-    rolling_std = np.std(data[-30:])
-    z_scores = (data - mean) / (rolling_std if rolling_std > 0 else std)
-    anomalies = np.abs(z_scores) > threshold
-    return anomalies, z_scores
-
-def detect_anomalies_lstm(data, look_back=10, threshold=2.0):
-    scaler = MinMaxScaler()
-    data_scaled = scaler.fit_transform(data.reshape(-1, 1))
+def detect_anomalies_lstm(data, look_back, threshold, model_path=None, scaler_path=None):
+    if scaler_path and os.path.exists(scaler_path):
+        scaler = joblib.load(scaler_path)
+    else:
+        scaler = MinMaxScaler()
+        data = data.reshape(-1, 1)
+        data = scaler.fit_transform(data)
+    data_scaled = scaler.transform(data.reshape(-1, 1))
+    
     X, y = [], []
     for i in range(len(data_scaled) - look_back):
         X.append(data_scaled[i:i+look_back])
         y.append(data_scaled[i+look_back])
     X, y = np.array(X), np.array(y)
 
-    model = Sequential()
-    model.add(LSTM(20, input_shape=(look_back, 1)))
-    model.add(Dense(1))
-    model.compile(loss='mean_squared_error', optimizer='adam')
-    model.fit(X, y, epochs=10, batch_size=1, verbose=0)
+    if model_path and os.path.exists(model_path):
+        model = load_model(model_path)
+    else:
+        logging.warning("No model provided, training from scratch.")
+        model = Sequential()
+        model.add(LSTM(20, input_shape=(look_back, 1)))
+        model.add(Dense(1))
+        model.compile(loss='mean_squared_error', optimizer='adam')
+        model.fit(X, y, epochs=10, batch_size=1, verbose=0)
 
     predictions = model.predict(X, verbose=0)
     mse = np.mean(np.square(y - predictions.reshape(-1)))
@@ -64,6 +66,14 @@ def detect_anomalies_lstm(data, look_back=10, threshold=2.0):
     padded_anomalies = np.concatenate((np.zeros(look_back), anomalies))
     padded_z = np.concatenate((np.zeros(look_back), z_scores))
     return padded_anomalies, padded_z
+
+def detect_anomalies_zscore(data, threshold):
+    mean = np.mean(data)
+    std = np.std(data)
+    rolling_std = np.std(data[-30:])
+    z_scores = (data - mean) / (rolling_std if rolling_std > 0 else std)
+    anomalies = np.abs(z_scores) > threshold
+    return anomalies, z_scores
 
 def plot_anomalies(data, anomalies, output_path):
     plt.figure(figsize=(10, 4))
@@ -137,14 +147,18 @@ def main(args):
     logging.info("== Satellite Defense Toolkit: Telemetry LSTM Monitor ==")
 
     telemetry_data = simulate_telemetry_stream()
-
     threshold = config.get("threshold", 3.0)
     method = config.get("method", "zscore")
     look_back = config.get("look_back", 10)
     ws_url = config.get("ws_url", "ws://localhost:8765")
+    model_path = config.get("model_path")
+    scaler_path = config.get("scaler_path")
 
     if method == "lstm":
-        anomalies, z_scores = detect_anomalies_lstm(telemetry_data, look_back, threshold)
+        anomalies, z_scores = detect_anomalies_lstm(
+            telemetry_data, look_back, threshold,
+            model_path=model_path, scaler_path=scaler_path
+        )
     else:
         anomalies, z_scores = detect_anomalies_zscore(telemetry_data, threshold)
 

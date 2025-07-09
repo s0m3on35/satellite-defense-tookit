@@ -1,3 +1,4 @@
+# modules/visualization/ws_live_dashboard.py
 import websocket
 import threading
 import json

@@ -1,12 +1,9 @@
-# setup.py
 from setuptools import setup, find_packages
 
 setup(
     name='satellite-defense-toolkit',
     version='1.0.0',
-    author='DV',
-    author_email='contact@yourdomain.com',
-    description='Advanced Satellite and Space Security Toolkit – Red Team, Defense, and Forensics',
+    description='Advanced Satellite and Space Security Toolkit: Red Team, Defense, and Forensics',
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type='text/markdown',
     url='https://github.com/s0m3on35/satellite-defense-tookit',
@@ -44,8 +41,9 @@ setup(
         ],
     },
     classifiers=[
-        "Development eStatus :: 5 - Production/Stable",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
+        "Topic :: Security",
         "Topic :: Security :: Cryptography",
         "Topic :: Security :: Monitoring",
         "License :: OSI Approved :: MIT License",
@@ -53,5 +51,5 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.8',
-    keywords='satellite cybersecurity defense red-team forensics',
+    keywords='satellite cybersecurity defense red-team forensics'
 )

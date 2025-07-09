@@ -1,63 +1,104 @@
 #!/bin/bash
 # Path: run_toolkit.sh
+# Purpose: Launch Satellite Defense Toolkit (GUI or CLI) with God-mode enhancements
 
-set -e
+set -euo pipefail
 
-# Ensure script is run from toolkit root
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$BASE_DIR"
 
-LAUNCHER="launcher.py"
-PYTHON=$(command -v python3 || true)
+LAUNCHER_GUI="satellite_defense_toolkit_gui.py"
+LAUNCHER_CLI="launcher.py"
+PYTHON=$(command -v python3 || command -v python || true)
+AUDIT_LOG="logs/launch_audit.log"
 
 print_help() {
   echo "Usage: ./run_toolkit.sh [options]"
+  echo ""
   echo "Options:"
-  echo "  --help        Show this help message"
-  echo "  --check       Check and install required dependencies"
-  echo "  --gui         Launch with graphical interface"
-  echo "  --headless    Launch in headless CLI mode"
+  echo "  --help         Show this help message"
+  echo "  --check        Verify and install required dependencies"
+  echo "  --gui          Launch the God-mode graphical interface"
+  echo "  --headless     Launch CLI mode (default launcher)"
+  echo "  --ws-check     Test WebSocket dashboard connectivity"
   echo ""
 }
 
 check_dependencies() {
-  echo "[*] Verifying required Python modules..."
+  echo "[*] Checking Python dependencies..."
 
-  REQUIRED_MODULES=(flask flask_socketio websocket-server websockets rich termcolor opencv-python pillow numpy requests scapy pyyaml pyserial blesuite aioblescan openai vosk pyttsx3 torch transformers torchaudio)
-  
+  REQUIRED_MODULES=(
+    flask flask_socketio websocket-server websockets
+    rich termcolor opencv-python pillow numpy
+    requests scapy pyyaml pyserial
+    blesuite aioblescan openai vosk pyttsx3
+    torch transformers torchaudio
+  )
+
+  MISSING=()
+
   for module in "${REQUIRED_MODULES[@]}"; do
     if ! $PYTHON -c "import $module" &>/dev/null; then
-      echo "[!] Missing Python module: $module"
-      MISSING=1
+      MISSING+=("$module")
     fi
   done
 
-  if [[ $MISSING -eq 1 ]]; then
-    echo "[*] Installing missing dependencies..."
+  if [[ ${#MISSING[@]} -gt 0 ]]; then
+    echo "[!] Missing modules: ${MISSING[*]}"
+    echo "[*] Installing..."
     $PYTHON -m pip install --upgrade pip
-    $PYTHON -m pip install "${REQUIRED_MODULES[@]}"
+    $PYTHON -m pip install "${MISSING[@]}"
   else
-    echo "[+] All dependencies are satisfied."
+    echo "[+] All dependencies are installed."
   fi
 }
 
-# Handle args
-if [[ "$1" == "--help" ]]; then
-  print_help
-  exit 0
-elif [[ "$1" == "--check" ]]; then
-  check_dependencies
-  exit 0
-fi
+check_websocket() {
+  echo "[*] Testing WebSocket dashboard..."
+  if timeout 3 bash -c "</dev/tcp/localhost/8765" 2>/dev/null; then
+    echo "[+] Dashboard WebSocket (localhost:8765) is responsive."
+  else
+    echo "[!] Dashboard WebSocket not reachable. Is it running?"
+  fi
+}
 
-# Check if launcher exists
-if [[ ! -f "$LAUNCHER" ]]; then
-  echo "[ERROR] Launcher file '$LAUNCHER' not found in $BASE_DIR"
-  exit 1
-fi
+log_launch() {
+  mkdir -p logs
+  echo "$(date +'%Y-%m-%d %H:%M:%S') :: $1" >> "$AUDIT_LOG"
+}
 
-# Optionally check dependencies on first run
-check_dependencies
-
-echo "[+] Launching Satellite Defense Toolkit..."
-exec $PYTHON "$LAUNCHER" "$@"
+# Main logic
+case "$1" in
+  --help)
+    print_help
+    exit 0
+    ;;
+  --check)
+    check_dependencies
+    exit 0
+    ;;
+  --ws-check)
+    check_websocket
+    exit 0
+    ;;
+  --gui)
+    check_dependencies
+    if [[ ! -f "$LAUNCHER_GUI" ]]; then
+      echo "[ERROR] GUI launcher '$LAUNCHER_GUI' not found."
+      exit 1
+    fi
+    log_launch "GUI launch initiated"
+    echo "[+] Launching GUI: $LAUNCHER_GUI"
+    exec $PYTHON "$LAUNCHER_GUI"
+    ;;
+  --headless|*)
+    check_dependencies
+    if [[ ! -f "$LAUNCHER_CLI" ]]; then
+      echo "[ERROR] CLI launcher '$LAUNCHER_CLI' not found."
+      exit 1
+    fi
+    log_launch "CLI launch initiated"
+    echo "[+] Launching CLI: $LAUNCHER_CLI"
+    exec $PYTHON "$LAUNCHER_CLI"
+    ;;
+esac

@@ -74,6 +74,7 @@ MODULE_GROUPS = {
         "YARA Mapper": "modules/analysis/yara_mapper.py",
         "YARA STIX Exporter": "modules/analysis/yara_stix_exporter.py",
         "Threat Classifier AI": "modules/ai/threat_classifier.py",
+        "Threat Summary LLM": "modules/ai/threat_summary_llm.py",
         "AI Copilot Engine": "modules/copilot/copilot_ai.py"
     },
     "Telemetry & GNSS": {

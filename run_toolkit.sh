@@ -1,6 +1,6 @@
 #!/bin/bash
 # Path: run_toolkit.sh
-# Purpose: Launch Satellite Defense Toolkit (GUI or CLI) with God-mode enhancements
+# Purpose: Launch Satellite Defense Toolkit (GUI or CLI) 
 
 set -euo pipefail
 

@@ -1,4 +1,3 @@
-
 # Satellite Defense Toolkit
 
 > A modular real-time defense and forensics suite for GNSS, SATCOM, and aerospace-critical infrastructure. Detects spoofing, jamming, firmware manipulation, and telemetry anomalies. Includes threat analysis, C2 controls, integrity monitors, STIX integration, and full operational dashboard.
@@ -19,29 +18,15 @@
 
 ## How to Use
 
-```bash
-chmod +x run_toolkit.sh
-./run_toolkit.sh
-```
-
-This launches the interactive defense environment. Modules can also be run independently from `modules/`.
-
----
-
-## Folder Structure
+Available in:
 
 ```
-satellite-defense-toolkit/
-âââ config/                  # Configuration files
-âââ core/                    # Core utilities (audit, logging, security)
-âââ docs/wiki/               # Markdown documentation and guides
-âââ logs/                    # Live logs (dashboard, modules)
-âââ modules/                 # Categorized defensive/offensive modules
-âââ results/                 # Scan results, STIX bundles, YARA hits
-âââ webgui/                  # Dashboard, login, visual frontend
-âââ run_toolkit.sh           # Primary launcher script
-âââ setup.py                 # Install dependencies (optional)
-âââ README.md                # This file
+docs/wiki/
+|- Overview.md
+|- Anomaly_Detection.md
+|- Firmware_Security.md
+|- Configuration.md
+|- index.html
 ```
 
 ---
@@ -130,11 +115,11 @@ Available in:
 
 ```
 docs/wiki/
-âââ Overview.md
-âââ Anomaly_Detection.md
-âââ Firmware_Security.md
-âââ Configuration.md
-âââ index.html
+- Overview.md
+- Anomaly_Detection.md
+- Firmware_Security.md
+- Configuration.md
+- index.html
 ```
 
 ---
@@ -149,4 +134,4 @@ Documentation and diagrams available at:
 
 ## Usage Notice
 
-This repository is NOT authorized for redistribution, commercial use, or forking without express written permission. All rights reserved
+This repository is NOT authorized for redistribution, commercial use, or forking without express written permission. All rights reserved.

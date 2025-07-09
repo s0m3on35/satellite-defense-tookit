@@ -1,3 +1,5 @@
+# modules/satcom_c2_spoof_detector.py
+
 import os
 import time
 import json

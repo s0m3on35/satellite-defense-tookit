@@ -12,7 +12,6 @@ import websocket
 
 DASHBOARD_WS_URL = "ws://localhost:8765"
 AUDIT_TRAIL_LOG = "logs/audit_trail.jsonl"
-AGENT_FILE = "webgui/agents.json"
 
 MODULE_GROUPS = {
     "Defense": {
@@ -22,7 +21,7 @@ MODULE_GROUPS = {
         "Firmware Memory Shield": "modules/defense/firmware_memory_shield.py",
         "Firmware Rollback Protector": "modules/defense/firmware_rollback_protector.py",
         "Firmware Signature Validator": "modules/defense/firmware_signature_validator.py",
-        "GNSS Spoof Guard": "modules/defense/gnss_spoof_guard.py",
+        "GNSS Spoof Guard": "modules/defense/gnss_spooof_guard.py",
         "Interface Integrity Monitor": "modules/defense/interface_integrity_monitor.py",
         "Kernel Module Guard": "modules/defense/kernel_module_guard.py",
         "Live Integrity Watcher": "modules/defense/live_integrity_watcher.py",
@@ -58,14 +57,10 @@ class SatelliteDefenseToolkitGUI:
         self.root.title("Satellite Defense Toolkit")
         self.root.geometry("1200x800")
         self.root.configure(bg="#0f0f0f")
-        self.dark_mode = True
         self.ws = None
-        self.agent_list = []
-        self.current_agent = tk.StringVar()
         self.run_history = []
 
         self.connect_to_websocket()
-        self.load_agents()
         self.create_interface()
 
     def connect_to_websocket(self):
@@ -81,39 +76,18 @@ class SatelliteDefenseToolkitGUI:
                 self.ws.send(json.dumps({
                     "timestamp": time.time(),
                     "type": evt_type,
-                    "agent": self.current_agent.get(),
                     "message": msg
                 }))
             except:
                 self.ws = None
 
-    def load_agents(self):
-        try:
-            with open(AGENT_FILE, "r") as f:
-                data = json.load(f)
-                self.agent_list = sorted([agent["id"] for agent in data.get("agents", [])])
-        except:
-            self.agent_list = ["default"]
-
-    def toggle_theme(self):
-        self.dark_mode = not self.dark_mode
-        bg = "#0f0f0f" if self.dark_mode else "#f0f0f0"
-        fg = "lime" if self.dark_mode else "black"
-        self.root.configure(bg=bg)
-        self.output.configure(bg=bg, fg=fg)
-        for tab in self.module_listboxes.values():
-            tab.configure(bg=bg, fg=fg)
-
     def create_interface(self):
-        topbar = tk.Frame(self.root, bg="#1a1a1a")
-        topbar.pack(fill=tk.X)
+        self.agent_selector = ttk.Combobox(self.root, values=["None"], width=30)
+        self.agent_selector.set("None")
+        self.agent_selector.pack(pady=5)
 
-        tk.Label(topbar, text="Agent:", bg="#1a1a1a", fg="white").pack(side=tk.LEFT, padx=10)
-        agent_menu = ttk.Combobox(topbar, textvariable=self.current_agent, values=self.agent_list, width=30)
-        agent_menu.set(self.agent_list[0])
-        agent_menu.pack(side=tk.LEFT, padx=5)
-
-        tk.Button(topbar, text="Toggle Theme", command=self.toggle_theme).pack(side=tk.RIGHT, padx=10)
+        self.theme_btn = tk.Button(self.root, text="Toggle Theme", command=self.toggle_theme)
+        self.theme_btn.pack(pady=2)
 
         self.tab_control = ttk.Notebook(self.root)
         self.module_listboxes = {}
@@ -145,6 +119,14 @@ class SatelliteDefenseToolkitGUI:
         tk.Button(buttons, text="Save Log", command=self.save_log, width=20).pack(side=tk.LEFT, padx=10)
         tk.Button(buttons, text="Run Sequence", command=self.run_module_chain, width=20).pack(side=tk.LEFT, padx=10)
 
+    def toggle_theme(self):
+        bg = "#ffffff" if self.root["bg"] == "#0f0f0f" else "#0f0f0f"
+        fg = "black" if bg == "#ffffff" else "lime"
+        self.root.configure(bg=bg)
+        self.output.configure(bg=bg, fg=fg)
+        for lb in self.module_listboxes.values():
+            lb.configure(bg=bg, fg=fg)
+
     def get_active_module(self):
         current_tab = self.tab_control.tab(self.tab_control.select(), "text")
         listbox = self.module_listboxes.get(current_tab)
@@ -158,16 +140,18 @@ class SatelliteDefenseToolkitGUI:
             self.log(f"[Error] Script not found: {path}")
             return
         args = simpledialog.askstring("Arguments", f"Enter arguments for {name} (or leave blank):")
+        agent = self.agent_selector.get()
         self.log(f"[+] Running {name} {'with args: ' + args if args else ''}")
-        self.send_dashboard_event("module_run", f"{name} launched")
+        self.send_dashboard_event("module_run", f"{name} launched by {agent}")
         self.run_history.append(name)
-        self.log_audit(name, path, args)
+        self.log_audit(name, path, args, agent)
         threading.Thread(target=self.run_script, args=(path, name, args), daemon=True).start()
 
     def run_module_chain(self):
         chain = simpledialog.askstring("Module Chain", "Enter modules separated by commas:")
         if not chain:
             return
+        agent = self.agent_selector.get()
         for mod in chain.split(","):
             mod = mod.strip()
             for category, group in MODULE_GROUPS.items():
@@ -175,8 +159,8 @@ class SatelliteDefenseToolkitGUI:
                     path = group[mod]
                     args = ""
                     self.log(f"[CHAIN] Running {mod}")
-                    self.send_dashboard_event("module_chain", f"{mod} in chain")
-                    self.log_audit(mod, path, args)
+                    self.send_dashboard_event("module_chain", f"{mod} in chain by {agent}")
+                    self.log_audit(mod, path, args, agent)
                     threading.Thread(target=self.run_script, args=(path, mod, args), daemon=True).start()
                     time.sleep(2)
 
@@ -189,14 +173,14 @@ class SatelliteDefenseToolkitGUI:
         except Exception as e:
             self.log(f"[Exception] {name} failed: {e}")
 
-    def log_audit(self, name, path, args=""):
+    def log_audit(self, name, path, args="", agent=""):
         os.makedirs("logs", exist_ok=True)
         audit = {
             "timestamp": time.time(),
             "module": name,
             "path": path,
             "args": args,
-            "agent": self.current_agent.get(),
+            "agent": agent,
             "event": "execution"
         }
         with open(AUDIT_TRAIL_LOG, "a") as f:
@@ -214,7 +198,7 @@ class SatelliteDefenseToolkitGUI:
         if path:
             with open(path, "w") as f:
                 f.write(self.output.get("1.0", tk.END))
-            self.log(f"[✓] Saved to {path}")
+            self.log(f"[â] Saved to {path}")
 
     def search_modules(self, *args):
         query = self.search_var.get().lower()

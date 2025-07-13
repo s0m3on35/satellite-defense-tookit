@@ -12,6 +12,7 @@ import websocket
 
 DASHBOARD_WS_URL = "ws://localhost:8765"
 AUDIT_TRAIL_LOG = "logs/audit_trail.jsonl"
+AGENT_FILE = "webgui/agents.json"
 
 MODULE_GROUPS = {
     "Defense": {
@@ -57,10 +58,14 @@ class SatelliteDefenseToolkitGUI:
         self.root.title("Satellite Defense Toolkit")
         self.root.geometry("1200x800")
         self.root.configure(bg="#0f0f0f")
+        self.dark_mode = True
         self.ws = None
+        self.agent_list = []
+        self.current_agent = tk.StringVar()
         self.run_history = []
 
         self.connect_to_websocket()
+        self.load_agents()
         self.create_interface()
 
     def connect_to_websocket(self):
@@ -76,12 +81,40 @@ class SatelliteDefenseToolkitGUI:
                 self.ws.send(json.dumps({
                     "timestamp": time.time(),
                     "type": evt_type,
+                    "agent": self.current_agent.get(),
                     "message": msg
                 }))
             except:
                 self.ws = None
 
+    def load_agents(self):
+        try:
+            with open(AGENT_FILE, "r") as f:
+                data = json.load(f)
+                self.agent_list = sorted([agent["id"] for agent in data.get("agents", [])])
+        except:
+            self.agent_list = ["default"]
+
+    def toggle_theme(self):
+        self.dark_mode = not self.dark_mode
+        bg = "#0f0f0f" if self.dark_mode else "#f0f0f0"
+        fg = "lime" if self.dark_mode else "black"
+        self.root.configure(bg=bg)
+        self.output.configure(bg=bg, fg=fg)
+        for tab in self.module_listboxes.values():
+            tab.configure(bg=bg, fg=fg)
+
     def create_interface(self):
+        topbar = tk.Frame(self.root, bg="#1a1a1a")
+        topbar.pack(fill=tk.X)
+
+        tk.Label(topbar, text="Agent:", bg="#1a1a1a", fg="white").pack(side=tk.LEFT, padx=10)
+        agent_menu = ttk.Combobox(topbar, textvariable=self.current_agent, values=self.agent_list, width=30)
+        agent_menu.set(self.agent_list[0])
+        agent_menu.pack(side=tk.LEFT, padx=5)
+
+        tk.Button(topbar, text="Toggle Theme", command=self.toggle_theme).pack(side=tk.RIGHT, padx=10)
+
         self.tab_control = ttk.Notebook(self.root)
         self.module_listboxes = {}
 
@@ -163,6 +196,7 @@ class SatelliteDefenseToolkitGUI:
             "module": name,
             "path": path,
             "args": args,
+            "agent": self.current_agent.get(),
             "event": "execution"
         }
         with open(AUDIT_TRAIL_LOG, "a") as f:

@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # Route: satellite_defense_toolkit_gui.py
 

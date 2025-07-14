@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Satellite Defense Toolkit — Live Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      background-color: #000;
+      color: #d0f0f0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      padding: 16px 24px;
+      background-color: #111;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .toggle-btn {
+      background-color: #222;
+      color: #aaa;
+      border: 1px solid #444;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .column {
+      flex: 1;
+      border-right: 1px solid #222;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .column:last-child {
+      border-right: none;
+    }
+
+    h2 {
+      font-size: 14px;
+      border-bottom: 1px solid #333;
+      margin-top: 0;
+      padding-bottom: 6px;
+    }
+
+    .event {
+      margin-bottom: 8px;
+      font-size: 13px;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .event.log { background-color: #222; }
+    .event.module_run { background-color: #2a2a40; color: #9fc; }
+    .event.module_chain { background-color: #404028; color: #ffd; }
+    .event.alert { background-color: #400; color: #f88; }
+    .event.telemetry { background-color: #123; color: #9ff; }
+    .event.stix { background-color: #224; color: #ccf; }
+    .event.forensics { background-color: #242; color: #afa; }
+
+    .timestamp {
+      color: #666;
+      font-size: 11px;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .light-mode {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .light-mode header {
+      background-color: #eee;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .light-mode .toggle-btn {
+      background-color: #ddd;
+      color: #222;
+      border-color: #bbb;
+    }
+
+    .light-mode .column {
+      border-color: #ccc;
+    }
+
+    .light-mode .event.log { background-color: #eee; color: #000; }
+    .light-mode .event.module_run { background-color: #e0f0ff; color: #007; }
+    .light-mode .event.module_chain { background-color: #fff6cc; color: #443; }
+    .light-mode .event.alert { background-color: #ffe5e5; color: #900; }
+    .light-mode .event.telemetry { background-color: #e5f5ff; color: #057; }
+    .light-mode .event.stix { background-color: #e5e5ff; color: #334; }
+    .light-mode .event.forensics { background-color: #e5ffe5; color: #262; }
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Satellite Defense Toolkit — Live Dashboard</h1>
+    <button class="toggle-btn" onclick="toggleTheme()">Toggle Theme</button>
+  </header>
+  <div class="content">
+    <div class="column" id="events">
+      <h2>Live Events</h2>
+    </div>
+    <div class="column" id="stix">
+      <h2>STIX Alerts</h2>
+    </div>
+    <div class="column" id="telemetry">
+      <h2>Telemetry Feed</h2>
+    </div>
+    <div class="column" id="forensics">
+      <h2>Forensics</h2>
+    </div>
+  </div>
+
+  <script>
+    const socket = new WebSocket("ws://localhost:8765");
+
+    socket.onmessage = function(event) {
+      const data = JSON.parse(event.data);
+      if (data.type === "stix") {
+        document.getElementById("stix").innerHTML += renderEvent("stix", JSON.stringify(data.data, null, 2));
+      } else if (data.type === "telemetry") {
+        document.getElementById("telemetry").innerHTML += renderEvent("telemetry", JSON.stringify(data.data, null, 2));
+      } else if (data.type === "forensics") {
+        document.getElementById("forensics").innerHTML += renderEvent("forensics", JSON.stringify(data.data, null, 2));
+      } else {
+        document.getElementById("events").innerHTML += renderEvent(data.type || "log", data.message, data.timestamp);
+      }
+    };
+
+    function renderEvent(type, message, timestamp) {
+      return `
+        <div class="event ${type}">
+          <span class="timestamp">${timestamp || new Date().toISOString()}</span>
+          <pre>${message}</pre>
+        </div>
+      `;
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("light-mode");
+    }
+  </script>
+</body>
+</html>

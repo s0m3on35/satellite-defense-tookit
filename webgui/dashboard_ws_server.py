@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Path: webgui/dashboard_ws_server.py
-# Description: Real-time WebSocket server for the Satellite Defense Toolkit dashboard
+# Description: WebSocket server for the Satellite Defense Toolkit live dashboard
 
 import asyncio
 import websockets
@@ -25,7 +25,9 @@ CONFIG = {
     "heartbeat_interval": 10
 }
 
+# Ensure directories exist
 Path(CONFIG["log_dir"]).mkdir(parents=True, exist_ok=True)
+Path("results").mkdir(parents=True, exist_ok=True)
 LOG_FILE = os.path.join(CONFIG["log_dir"], "dashboard_stream.log")
 
 logging.basicConfig(
@@ -37,7 +39,7 @@ logging.basicConfig(
 connected_clients = set()
 auth_failures = {}
 
-# === Utility Functions ===
+# === Utilities ===
 
 def utc():
     return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
@@ -45,10 +47,10 @@ def utc():
 def color(msg, level="info"):
     if not os.isatty(1): return msg
     colors = {
-        "info": "\033[94m",   # blue
-        "ok": "\033[92m",     # green
-        "warn": "\033[93m",   # yellow
-        "fail": "\033[91m",   # red
+        "info": "\033[94m",
+        "ok": "\033[92m",
+        "warn": "\033[93m",
+        "fail": "\033[91m",
         "end": "\033[0m"
     }
     return f"{colors.get(level, '')}{msg}{colors['end']}"
@@ -65,12 +67,12 @@ async def authenticate(websocket):
             return True
         ip = websocket.remote_address[0]
         auth_failures[ip] = auth_failures.get(ip, 0) + 1
-        logging.warning(f"[AUTH] Rejected client {ip} (attempt {auth_failures[ip]})")
+        logging.warning(f"[AUTH] Rejected: {ip} (attempt {auth_failures[ip]})")
     except Exception as e:
         logging.warning(f"[AUTH] Exception: {e}")
     return False
 
-# === Broadcasting ===
+# === Broadcast Helpers ===
 
 async def broadcast_to_all(message):
     disconnected = set()
@@ -102,7 +104,7 @@ async def log_event(payload, sender=None):
         logging.warning(f"[!] Malformed payload from {sender}: {e}")
         return None
 
-# === Stream Monitors ===
+# === Data Streamers ===
 
 async def stream_file(path, stream_type, interval):
     last_hash = ""
@@ -121,22 +123,21 @@ async def stream_file(path, stream_type, interval):
                         })
                         await broadcast_to_all(msg)
         except Exception as e:
-            logging.error(f"[{stream_type.upper()} STREAM] Error: {e}")
+            logging.error(f"[{stream_type.upper()}] Stream error: {e}")
         await asyncio.sleep(interval)
 
 async def heartbeat():
     while True:
-        await broadcast_to_all(json.dumps({
-            "type": "ping",
-            "timestamp": utc()
-        }))
+        ping = json.dumps({"type": "ping", "timestamp": utc()})
+        await broadcast_to_all(ping)
         await asyncio.sleep(CONFIG["heartbeat_interval"])
 
 # === WebSocket Handler ===
 
 async def ws_handler(websocket, path):
     ip = websocket.remote_address[0]
-    logging.info(f"[+] New WebSocket connection: {ip}")
+    logging.info(f"[+] WebSocket connection from {ip}")
+
     if not await authenticate(websocket):
         await websocket.send(json.dumps({"error": "unauthorized"}))
         await websocket.close()
@@ -151,14 +152,14 @@ async def ws_handler(websocket, path):
             if response:
                 await broadcast_to_all(response)
     except websockets.exceptions.ConnectionClosed:
-        print(color(f"[-] Client disconnected: {ip}", "warn"))
+        print(color(f"[-] Disconnected: {ip}", "warn"))
     finally:
         connected_clients.discard(websocket)
 
-# === Main Runner ===
+# === Main Entry Point ===
 
 async def main():
-    print(color(f"\n[WS] Dashboard running at ws://{CONFIG['host']}:{CONFIG['port']}\n", "info"))
+    print(color(f"\n[WS] Dashboard active @ ws://{CONFIG['host']}:{CONFIG['port']}\n", "info"))
     server = await websockets.serve(ws_handler, CONFIG["host"], CONFIG["port"])
     await asyncio.gather(
         server.wait_closed(),
@@ -172,4 +173,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print(color("[!] WebSocket server shutting down...", "fail"))
+        print(color("[!] Shutdown signal received. WebSocket server exiting.", "fail"))

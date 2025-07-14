@@ -149,6 +149,6 @@ MIT License – See `LICENSE.md`
 
 ## Author
 
-Maintained by the Satellite Offensive Research Division.
+Maintained by the Satellite Offensive Research Division lead by someone (D)
 
 GitHub: [https://github.com/s0m3on35/satellite-defense-tookit](https://github.com/s0m3on35/satellite-defense-tookit)

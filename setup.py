@@ -1,50 +1,42 @@
 from setuptools import setup, find_packages
-import os
-
-# Read long description safely
-long_description = ""
-if os.path.exists("README.md"):
-    with open("README.md", encoding="utf-8") as f:
-        long_description = f.read()
 
 setup(
     name='satellite-defense-toolkit',
     version='1.0.0',
-    description='Advanced Satellite and Space Security Toolkit: Red Team, Defense, and Forensics',
-    long_description=long_description,
+    description='Advanced Satellite and Space Security Toolkit: CLI, GUI, Red Team, Defense, and Forensics',
+    long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type='text/markdown',
     url='https://github.com/s0m3on35/satellite-defense-tookit',
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        "stix2>=3.0.1",
-        "taxii2-client>=2.3.0",
-        "matplotlib>=3.8.0",
-        "scapy>=2.5.0",
-        "yara-python>=4.3.1",
-        "tensorflow>=2.14.0",
+        "websocket-client>=1.7.0",
         "flask>=2.2.5",
         "flask-socketio>=5.3.0",
-        "websocket-client>=1.7.0",
-        "psutil>=5.9.0",
         "rich>=13.6.0",
+        "psutil>=5.9.0",
+        "stix2>=3.0.1",
+        "yara-python>=4.3.1",
+        "scapy>=2.5.0",
+        "numpy>=1.24.0",
+        "Pillow>=10.0.0",
         "pyyaml>=6.0.1",
         "pyserial>=3.5",
-        "blesuite>=0.1.10",
         "aioblescan>=0.2.10",
-        "openai>=1.10.0",
+        "blesuite>=0.1.10",
         "vosk>=0.3.45",
         "pyttsx3>=2.90",
         "torch>=2.1.0",
-        "transformers>=4.33.0",
         "torchaudio>=2.1.0",
+        "tensorflow>=2.14.0",
+        "transformers>=4.33.0",
         "opencv-python>=4.8.0",
-        "Pillow>=10.0.0",
-        "numpy>=1.24.0",
+        "openai>=1.10.0"
     ],
     entry_points={
         'console_scripts': [
-            'satdef-toolkit = launcher.satellite_defense_toolkit_launcher:main',
+            'satdef-cli = satellite_defense_toolkit_cli:main',
+            'satdef-gui = launcher.satellite_defense_toolkit_gui:main'
         ],
     },
     classifiers=[
@@ -58,5 +50,5 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.8',
-    keywords='satellite cybersecurity defense red-team forensics',
+    keywords='satellite cybersecurity defense red-team cli forensics'
 )

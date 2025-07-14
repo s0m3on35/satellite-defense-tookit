@@ -1,137 +1,150 @@
 #!/usr/bin/env python3
-# Ruta: webgui/dashboard_ws_server.py
+# Path: webgui/dashboard_ws_server.py
 
 import asyncio
 import websockets
 import json
 import os
-import hashlib
 import logging
+import hashlib
 from datetime import datetime
+from pathlib import Path
 
-# Paths
-LOG_DIR = "logs/dashboard"
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE = os.path.join(LOG_DIR, "dashboard_stream.log")
-STIX_FILE = "results/stix_yara_bundle.json"
-FORENSIC_LOG = "results/forensics_report.json"
-TELEMETRY_LOG = "results/telemetry_feed.json"
+# Configuration
+CONFIG = {
+    "host": "0.0.0.0",
+    "port": 8765,
+    "log_dir": "logs/dashboard",
+    "stix_file": "results/stix_yara_bundle.json",
+    "telemetry_file": "results/telemetry_feed.json",
+    "forensic_file": "results/forensics_report.json",
+    "auth_token": os.getenv("SATDEF_WS_TOKEN"),
+    "debug": os.getenv("SATDEF_WS_DEBUG") == "1",
+    "stream_interval": 5
+}
 
-# Auth & Config
-AUTH_TOKEN = os.environ.get("SATDEF_WS_TOKEN")
-DEBUG = os.environ.get("SATDEF_WS_DEBUG") == "1"
+Path(CONFIG["log_dir"]).mkdir(parents=True, exist_ok=True)
+LOG_FILE = os.path.join(CONFIG["log_dir"], "dashboard_stream.log")
 
-# State
-connected_clients = set()
-auth_failures = {}
-
-# Logging
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,
-    format='[%(asctime)s] %(levelname)s: %(message)s',
+    format='[%(asctime)s] %(levelname)s: %(message)s'
 )
 
-def utc_timestamp():
+connected_clients = set()
+auth_failures = {}
+
+def utc():
     return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
 
-async def log_handler(message, client=None):
-    try:
-        data = json.loads(message)
-        msg_type = data.get("type", "event")
-        content = data.get("message", "")
-        event_id = hashlib.sha256(f"{msg_type}:{content}:{utc_timestamp()}".encode()).hexdigest()[:10]
-        log_entry = f"[{utc_timestamp()}] {msg_type} [{event_id}]: {content}"
-        logging.info(log_entry)
-        data["timestamp"] = utc_timestamp()
-        data["id"] = event_id
-        return data
-    except json.JSONDecodeError:
-        logging.warning(f"Invalid JSON from {client}: {message}")
-        return None
-
-async def broadcast_json_from_file(filepath, datatype, interval=5):
-    last_sent_hash = ""
-    while True:
-        try:
-            if os.path.exists(filepath):
-                with open(filepath, "r") as f:
-                    data = json.load(f)
-                    payload = json.dumps({
-                        "type": datatype,
-                        "timestamp": utc_timestamp(),
-                        "data": data
-                    })
-                    payload_hash = hashlib.md5(payload.encode()).hexdigest()
-                    if payload_hash != last_sent_hash:
-                        await broadcast_to_all(payload)
-                        last_sent_hash = payload_hash
-        except Exception as e:
-            logging.error(f"[{datatype.upper()} STREAM] Error: {e}")
-        await asyncio.sleep(interval)
-
-async def broadcast_to_all(message):
-    disconnected = set()
-    for client in connected_clients:
-        try:
-            await client.send(message)
-            if DEBUG:
-                logging.info(f"[→] Sent to {client.remote_address}: {message[:80]}")
-        except websockets.exceptions.ConnectionClosed:
-            disconnected.add(client)
-    connected_clients.difference_update(disconnected)
+def color(msg, status="info"):
+    if not os.isatty(1): return msg
+    colors = {"info": "\033[94m", "warn": "\033[93m", "fail": "\033[91m", "ok": "\033[92m", "end": "\033[0m"}
+    return f"{colors.get(status, '')}{msg}{colors['end']}"
 
 async def authenticate(websocket):
-    if not AUTH_TOKEN:
+    if not CONFIG["auth_token"]:
         return True
     try:
         auth_msg = await asyncio.wait_for(websocket.recv(), timeout=5)
-        auth_data = json.loads(auth_msg)
-        token = auth_data.get("auth")
-        if token == AUTH_TOKEN:
+        data = json.loads(auth_msg)
+        if data.get("auth") == CONFIG["auth_token"]:
             return True
         ip = websocket.remote_address[0]
         auth_failures[ip] = auth_failures.get(ip, 0) + 1
-        logging.warning(f"[!] Invalid token from {ip} (attempt {auth_failures[ip]})")
+        logging.warning(f"[AUTH] Failed attempt from {ip} ({auth_failures[ip]}x)")
     except Exception as e:
-        logging.warning(f"[!] Auth exception: {e}")
+        logging.warning(f"[AUTH] Exception: {e}")
     return False
 
-async def handler(websocket, path):
-    client_ip = websocket.remote_address[0]
-    logging.info(f"[+] Connection from: {client_ip}")
+async def broadcast_to_all(msg):
+    dead = set()
+    for client in connected_clients:
+        try:
+            await client.send(msg)
+            if CONFIG["debug"]:
+                logging.info(f"[→] Sent to {client.remote_address}")
+        except websockets.exceptions.ConnectionClosed:
+            dead.add(client)
+    connected_clients.difference_update(dead)
 
+async def log_event(payload, sender=None):
+    try:
+        data = json.loads(payload)
+        msg_type = data.get("type", "event")
+        content = data.get("message", "")
+        ts = utc()
+        event_id = hashlib.sha256(f"{msg_type}:{content}:{ts}".encode()).hexdigest()[:10]
+        logline = f"[{ts}] {msg_type} [{event_id}]: {content}"
+        logging.info(logline)
+        print(color(f"[{ts}] {msg_type.upper():>8} → {content}", "ok"))
+        data["timestamp"] = ts
+        data["id"] = event_id
+        return json.dumps(data)
+    except Exception as e:
+        logging.warning(f"[!] Bad message from {sender}: {e}")
+        return None
+
+async def stream_file(path, stream_type, interval):
+    last_hash = ""
+    while True:
+        try:
+            if os.path.exists(path):
+                with open(path) as f:
+                    raw = f.read()
+                    hash_now = hashlib.md5(raw.encode()).hexdigest()
+                    if hash_now != last_hash:
+                        last_hash = hash_now
+                        msg = json.dumps({
+                            "type": stream_type,
+                            "timestamp": utc(),
+                            "data": json.loads(raw)
+                        })
+                        await broadcast_to_all(msg)
+        except Exception as e:
+            logging.error(f"[{stream_type.upper()}] Stream error: {e}")
+        await asyncio.sleep(interval)
+
+async def heartbeat():
+    while True:
+        ping = json.dumps({"type": "ping", "timestamp": utc()})
+        await broadcast_to_all(ping)
+        await asyncio.sleep(10)
+
+async def ws_handler(websocket, path):
+    client_ip = websocket.remote_address[0]
+    logging.info(f"[+] New client: {client_ip}")
     if not await authenticate(websocket):
         await websocket.send(json.dumps({"error": "unauthorized"}))
         await websocket.close()
-        logging.info(f"[×] Unauthorized connection closed: {client_ip}")
         return
 
     connected_clients.add(websocket)
-    logging.info(f"[✓] WebSocket connected: {client_ip}")
+    print(color(f"[✓] Client connected: {client_ip}", "ok"))
     try:
         async for message in websocket:
-            data = await log_handler(message, client_ip)
+            data = await log_event(message, client_ip)
             if data:
-                await broadcast_to_all(json.dumps(data))
+                await broadcast_to_all(data)
     except websockets.exceptions.ConnectionClosed:
-        logging.info(f"[-] Client disconnected: {client_ip}")
+        print(color(f"[-] Disconnected: {client_ip}", "warn"))
     finally:
         connected_clients.discard(websocket)
 
 async def main():
-    print("[WS Server] Satellite Defense WebSocket running on ws://0.0.0.0:8765")
-    server = await websockets.serve(handler, "0.0.0.0", 8765)
-
+    print(color(f"\n[WS] Satellite Dashboard running @ ws://{CONFIG['host']}:{CONFIG['port']}\n", "info"))
+    server = await websockets.serve(ws_handler, CONFIG["host"], CONFIG["port"])
     await asyncio.gather(
         server.wait_closed(),
-        broadcast_json_from_file(STIX_FILE, "stix"),
-        broadcast_json_from_file(FORENSIC_LOG, "forensics"),
-        broadcast_json_from_file(TELEMETRY_LOG, "telemetry")
+        stream_file(CONFIG["stix_file"], "stix", CONFIG["stream_interval"]),
+        stream_file(CONFIG["forensic_file"], "forensics", CONFIG["stream_interval"]),
+        stream_file(CONFIG["telemetry_file"], "telemetry", CONFIG["stream_interval"]),
+        heartbeat()
     )
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("[!] Shutdown requested. Exiting.")
+        print(color("[!] Shutdown initiated by user", "fail"))

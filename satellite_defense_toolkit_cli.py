@@ -1,4 +1,4 @@
-##!/usr/bin/env python3
+#!/usr/bin/env python3
 # Route: satellite_defense_toolkit_cli.py
 
 import os
@@ -6,9 +6,9 @@ import json
 import time
 import subprocess
 import argparse
-import readline
 from pathlib import Path
 import websocket
+import sys
 
 DASHBOARD_WS_URL = "ws://localhost:8765"
 AUDIT_LOG = Path("logs/cli_audit_log.jsonl")
@@ -23,14 +23,15 @@ MODULES = {
     "C2": "modules/c2"
 }
 
-# Ensure paths exist
 def prepare_environment():
+    """Ensure required directories and files exist."""
     for path in [AUDIT_LOG.parent, EXEC_LOG.parent, AGENTS_FILE.parent]:
         path.mkdir(parents=True, exist_ok=True)
     if not AGENTS_FILE.exists():
         AGENTS_FILE.write_text("[]")
 
 def list_modules():
+    """List all available modules across categories."""
     mod_list = []
     for category, path in MODULES.items():
         if os.path.exists(path):
@@ -40,18 +41,27 @@ def list_modules():
     return mod_list
 
 def choose_agent():
-    agents = json.loads(AGENTS_FILE.read_text())
+    """Present agents to the user and return selected one."""
+    try:
+        agents = json.loads(AGENTS_FILE.read_text())
+    except Exception as e:
+        print(f"[!] Error reading agents: {e}")
+        return None
+
     if not agents:
         return None
-    print("\nAvailable Agents:")
+
+    print("\n[Agent Selector]")
     for idx, agent in enumerate(agents, 1):
         print(f"  [{idx}] {agent.get('name', 'Unnamed')} ({agent.get('ip', '-')})")
-    choice = input("Select agent [number or blank for none]: ")
+
+    choice = input("Select agent [number or blank]: ").strip()
     if choice.isdigit() and 0 < int(choice) <= len(agents):
         return agents[int(choice)-1]
     return None
 
 def send_ws_event(event_type, message):
+    """Send event to WebSocket dashboard (non-blocking)."""
     try:
         ws = websocket.create_connection(DASHBOARD_WS_URL, timeout=3)
         ws.send(json.dumps({
@@ -60,8 +70,8 @@ def send_ws_event(event_type, message):
             "message": message
         }))
         ws.close()
-    except Exception:
-        pass  # Silent fail if dashboard is offline
+    except:
+        pass  # Dashboard offline or unreachable
 
 def log_execution(module_name, path, args, agent):
     entry = {
@@ -77,66 +87,80 @@ def log_execution(module_name, path, args, agent):
 
 def run_module(path, args, module_name):
     cmd = ["python3", path] + args.split()
-    print(f"\n[+] Running: {module_name}")
-    print(f"Command: {' '.join(cmd)}\n")
+    print(f"\n[+] Running module: {module_name}")
+    print(f"[>] Command: {' '.join(cmd)}")
     with open(EXEC_LOG, "a") as logf:
         logf.write(f"\n===== {module_name} @ {time.ctime()} =====\n")
         try:
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             for line in proc.stdout:
-                print(line.strip())
+                print(f"[{module_name}] {line.strip()}")
                 logf.write(line)
         except Exception as e:
-            print(f"[!] Failed: {e}")
+            print(f"[!] Error: {e}")
             logf.write(f"[!] Exception: {e}\n")
 
-def interactive_menu():
-    print("\nSatellite Defense Toolkit CLI")
-    print("="*40)
-    mods = list_modules()
+def chain_mode(mods):
+    print("\n[Chain Mode] Enter module numbers separated by commas (e.g., 1,2,5):")
     for idx, (cat, mod, _) in enumerate(mods, 1):
-        print(f"[{idx}] {cat:16} - {mod}")
-    print("[C] Chain modules")
-    print("[Q] Quit")
-    choice = input("\nSelect option: ").strip()
-    if choice.lower() == 'q':
-        return
-    elif choice.lower() == 'c':
-        chain_mode(mods)
-        return
-    elif choice.isdigit():
-        idx = int(choice) - 1
+        print(f"[{idx:02}] {cat:20} - {mod}")
+    sel = input("\nModules to chain: ").strip()
+    delay = input("Delay between modules (seconds, default 2): ").strip()
+    delay = int(delay) if delay.isdigit() else 2
+
+    agent = choose_agent()
+    parts = [p.strip() for p in sel.split(",") if p.strip().isdigit()]
+
+    for part in parts:
+        idx = int(part) - 1
         if 0 <= idx < len(mods):
             _, name, path = mods[idx]
-            args = input(f"Args for {name} (leave blank for none): ").strip()
-            agent = choose_agent()
+            args = input(f"Args for {name} (blank = none): ").strip()
             log_execution(name, path, args, agent)
-            send_ws_event("module_run", f"{name} run via CLI")
+            send_ws_event("module_chain", f"{name} chained via CLI")
             run_module(path, args, name)
+            time.sleep(delay)
 
-def chain_mode(mods):
-    print("\nChain Mode — use numbers separated by commas (e.g. 1,3,5)")
-    for idx, (cat, mod, _) in enumerate(mods, 1):
-        print(f"[{idx}] {cat:16} - {mod}")
-    sel = input("\nModules to chain: ").strip()
-    if not sel:
-        return
-    parts = sel.split(",")
-    agent = choose_agent()
-    for part in parts:
-        if part.strip().isdigit():
-            idx = int(part.strip()) - 1
+def interactive_menu():
+    """Main CLI interface loop."""
+    while True:
+        print("\nSatellite Defense Toolkit CLI")
+        print("="*40)
+        mods = list_modules()
+        if not mods:
+            print("[!] No modules found. Ensure paths are correct.")
+            break
+
+        for idx, (cat, mod, _) in enumerate(mods, 1):
+            print(f"[{idx:02}] {cat:20} - {mod}")
+        print("[C] Chain multiple modules")
+        print("[Q] Quit")
+
+        choice = input("\nSelect option: ").strip().lower()
+        if choice == 'q':
+            print("[✓] Exiting.")
+            break
+        elif choice == 'c':
+            chain_mode(mods)
+        elif choice.isdigit():
+            idx = int(choice) - 1
             if 0 <= idx < len(mods):
                 _, name, path = mods[idx]
-                args = input(f"Args for {name} (blank = none): ").strip()
+                args = input(f"Args for {name} (leave blank for none): ").strip()
+                agent = choose_agent()
                 log_execution(name, path, args, agent)
-                send_ws_event("module_chain", f"{name} chained via CLI")
+                send_ws_event("module_run", f"{name} run via CLI")
                 run_module(path, args, name)
+        else:
+            print("[!] Invalid input. Try again.")
 
 def main():
     prepare_environment()
-    while True:
-        interactive_menu()
+    interactive_menu()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n[✓] Interrupted by user. Exiting.")
+        sys.exit(0)

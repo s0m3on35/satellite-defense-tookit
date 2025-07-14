@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Path: webgui/dashboard_ws_server.py
+# Description: Real-time WebSocket server for the Satellite Defense Toolkit dashboard
 
 import asyncio
 import websockets
@@ -10,7 +11,7 @@ import hashlib
 from datetime import datetime
 from pathlib import Path
 
-# Configuration
+# === Configuration ===
 CONFIG = {
     "host": "0.0.0.0",
     "port": 8765,
@@ -20,7 +21,8 @@ CONFIG = {
     "forensic_file": "results/forensics_report.json",
     "auth_token": os.getenv("SATDEF_WS_TOKEN"),
     "debug": os.getenv("SATDEF_WS_DEBUG") == "1",
-    "stream_interval": 5
+    "stream_interval": 5,
+    "heartbeat_interval": 10
 }
 
 Path(CONFIG["log_dir"]).mkdir(parents=True, exist_ok=True)
@@ -35,13 +37,23 @@ logging.basicConfig(
 connected_clients = set()
 auth_failures = {}
 
+# === Utility Functions ===
+
 def utc():
     return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
 
-def color(msg, status="info"):
+def color(msg, level="info"):
     if not os.isatty(1): return msg
-    colors = {"info": "\033[94m", "warn": "\033[93m", "fail": "\033[91m", "ok": "\033[92m", "end": "\033[0m"}
-    return f"{colors.get(status, '')}{msg}{colors['end']}"
+    colors = {
+        "info": "\033[94m",   # blue
+        "ok": "\033[92m",     # green
+        "warn": "\033[93m",   # yellow
+        "fail": "\033[91m",   # red
+        "end": "\033[0m"
+    }
+    return f"{colors.get(level, '')}{msg}{colors['end']}"
+
+# === Authentication ===
 
 async def authenticate(websocket):
     if not CONFIG["auth_token"]:
@@ -53,21 +65,25 @@ async def authenticate(websocket):
             return True
         ip = websocket.remote_address[0]
         auth_failures[ip] = auth_failures.get(ip, 0) + 1
-        logging.warning(f"[AUTH] Failed attempt from {ip} ({auth_failures[ip]}x)")
+        logging.warning(f"[AUTH] Rejected client {ip} (attempt {auth_failures[ip]})")
     except Exception as e:
         logging.warning(f"[AUTH] Exception: {e}")
     return False
 
-async def broadcast_to_all(msg):
-    dead = set()
+# === Broadcasting ===
+
+async def broadcast_to_all(message):
+    disconnected = set()
     for client in connected_clients:
         try:
-            await client.send(msg)
+            await client.send(message)
             if CONFIG["debug"]:
                 logging.info(f"[→] Sent to {client.remote_address}")
         except websockets.exceptions.ConnectionClosed:
-            dead.add(client)
-    connected_clients.difference_update(dead)
+            disconnected.add(client)
+    connected_clients.difference_update(disconnected)
+
+# === Log Handling ===
 
 async def log_event(payload, sender=None):
     try:
@@ -76,26 +92,28 @@ async def log_event(payload, sender=None):
         content = data.get("message", "")
         ts = utc()
         event_id = hashlib.sha256(f"{msg_type}:{content}:{ts}".encode()).hexdigest()[:10]
-        logline = f"[{ts}] {msg_type} [{event_id}]: {content}"
-        logging.info(logline)
+        log_line = f"[{ts}] {msg_type} [{event_id}]: {content}"
+        logging.info(log_line)
         print(color(f"[{ts}] {msg_type.upper():>8} → {content}", "ok"))
         data["timestamp"] = ts
         data["id"] = event_id
         return json.dumps(data)
     except Exception as e:
-        logging.warning(f"[!] Bad message from {sender}: {e}")
+        logging.warning(f"[!] Malformed payload from {sender}: {e}")
         return None
+
+# === Stream Monitors ===
 
 async def stream_file(path, stream_type, interval):
     last_hash = ""
     while True:
         try:
             if os.path.exists(path):
-                with open(path) as f:
+                with open(path, "r") as f:
                     raw = f.read()
-                    hash_now = hashlib.md5(raw.encode()).hexdigest()
-                    if hash_now != last_hash:
-                        last_hash = hash_now
+                    current_hash = hashlib.md5(raw.encode()).hexdigest()
+                    if current_hash != last_hash:
+                        last_hash = current_hash
                         msg = json.dumps({
                             "type": stream_type,
                             "timestamp": utc(),
@@ -103,37 +121,44 @@ async def stream_file(path, stream_type, interval):
                         })
                         await broadcast_to_all(msg)
         except Exception as e:
-            logging.error(f"[{stream_type.upper()}] Stream error: {e}")
+            logging.error(f"[{stream_type.upper()} STREAM] Error: {e}")
         await asyncio.sleep(interval)
 
 async def heartbeat():
     while True:
-        ping = json.dumps({"type": "ping", "timestamp": utc()})
-        await broadcast_to_all(ping)
-        await asyncio.sleep(10)
+        await broadcast_to_all(json.dumps({
+            "type": "ping",
+            "timestamp": utc()
+        }))
+        await asyncio.sleep(CONFIG["heartbeat_interval"])
+
+# === WebSocket Handler ===
 
 async def ws_handler(websocket, path):
-    client_ip = websocket.remote_address[0]
-    logging.info(f"[+] New client: {client_ip}")
+    ip = websocket.remote_address[0]
+    logging.info(f"[+] New WebSocket connection: {ip}")
     if not await authenticate(websocket):
         await websocket.send(json.dumps({"error": "unauthorized"}))
         await websocket.close()
         return
 
     connected_clients.add(websocket)
-    print(color(f"[✓] Client connected: {client_ip}", "ok"))
+    print(color(f"[✓] Client authenticated: {ip}", "ok"))
+
     try:
         async for message in websocket:
-            data = await log_event(message, client_ip)
-            if data:
-                await broadcast_to_all(data)
+            response = await log_event(message, ip)
+            if response:
+                await broadcast_to_all(response)
     except websockets.exceptions.ConnectionClosed:
-        print(color(f"[-] Disconnected: {client_ip}", "warn"))
+        print(color(f"[-] Client disconnected: {ip}", "warn"))
     finally:
         connected_clients.discard(websocket)
 
+# === Main Runner ===
+
 async def main():
-    print(color(f"\n[WS] Satellite Dashboard running @ ws://{CONFIG['host']}:{CONFIG['port']}\n", "info"))
+    print(color(f"\n[WS] Dashboard running at ws://{CONFIG['host']}:{CONFIG['port']}\n", "info"))
     server = await websockets.serve(ws_handler, CONFIG["host"], CONFIG["port"])
     await asyncio.gather(
         server.wait_closed(),
@@ -147,4 +172,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print(color("[!] Shutdown initiated by user", "fail"))
+        print(color("[!] WebSocket server shutting down...", "fail"))

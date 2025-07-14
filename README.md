@@ -1,159 +1,154 @@
 # Satellite Defense Toolkit
 
-A modular real-time defense and forensics suite for GNSS, SATCOM, and aerospace-critical infrastructure. Detects spoofing, jamming, firmware manipulation, and telemetry anomalies. Includes threat analysis, C2 controls, integrity monitors, STIX integration, and a full operational dashboard.
+## Overview
+
+The Satellite Defense Toolkit is a comprehensive, military-grade suite for securing, analyzing, and emulating threats against satellite and aerospace systems. It supports red teaming, blue teaming, and forensic operations with a modular design, AI-assisted components, and a fully integrated GUI/CLI/WebSocket dashboard system.
 
 ---
 
-## Key Modules (Selected)
+## Features
 
-| Category         | Module                                | Description |
-|------------------|----------------------------------------|-------------|
-| GNSS Defense     | `gnss_ai_anomaly_detector.py`         | Detects GNSS spoofing using Isolation Forest |
-| RF Defense       | `rf_jammer_locator.py`                | SDR heatmap jammer localization |
-| Firmware         | `firmware_watcher_agent.py`           | HMAC-based firmware integrity monitoring |
-| Telemetry        | `telemetry_lstm_monitor.py`           | Detects anomalies via LSTM neural network |
-| Dashboard        | `satellite_defense_toolkit_gui.py`    | Central command dashboard (WebSocket, GUI) |
-| Advanced Analysis| `binary_diff_engine.py`               | Binary differential engine for firmware forensics |
-
----
-
-## How to Use
-
-Documentation is available in:
-
-```
-docs/wiki/
-|- Overview.md
-|- Anomaly_Detection.md
-|- Firmware_Security.md
-|- Configuration.md
-|- index.html
-```
+- Real-time telemetry analysis
+- AI-based threat classification and Copilot integration
+- GNSS spoof detection and spoofing emulation
+- Firmware implant, OTA injection, and rollback defense
+- Forensic memory, OTA, and timeline analysis
+- Full WebSocket-based dashboard and agent visibility
+- GUI and CLI toolkits with audit and logging support
+- STIX/TAXII threat export and interoperability
 
 ---
 
-## Full Module Categories
+## Directory Structure
 
-### Defense Modules
-
-- `binary_integrity_watcher.py`
-- `firewall_rule_generator.py`
-- `firmware_integrity_watcher.py`
-- `firmware_memory_shield.py`
-- `firmware_rollback_protector.py`
-- `firmware_signature_validator.py`
-- `gnss_spoof_guard.py`
-- `interface_integrity_monitor.py`
-- `kernel_module_guard.py`
-- `live_integrity_watcher.py`
-- `ota_guard.py`
-- `ota_stream_guard.py`
-- `rf_injection_barrier.py`
-- `secure_update_guard.py`
-- `system_call_anomaly_watcher.py`
-- `telemetry_guardian.py`
-
-### Forensics Modules
-
-- `firmware_timeline_builder.py`
-- `memwatch_agent.py`
-- `ota_packet_analyzer.py`
-
-### Advanced Analysis
-
-- `binary_diff_engine.py`
-- `elf_section_analyzer.py`
-- `firmware_cfg_exporter.py`
-- `firmware_obfuscation_classifier.py`
-- `firmware_recovery_toolkit.py`
-- `heap_stack_pattern_scanner.py`
-- `syscall_extractor.py`
-- `dynamic_string_decoder.py`
-- `forensic_event_correlator.py`
-
-### Firmware Analysis
-
-- `firmware_crypto_auditor.py`
-- `firmware_pcap_export.py`
-- `firmware_stix_export.py`
-- `firmware_unpacker.py`
-- `firmware_backdoor_scanner.py`
-
-### GNSS/SATCOM Threat Simulation & Attacks
-
-- `gnss_spoofer.py`
-- `rf_jammer_dos.py`
-- `satcom_c2_hijacker.py`
-- `satellite_dish_aim_override.py`
-- `telemetry_data_spoofer.py`
-- `firmware_persistent_implant.py`
-- `ota_firmware_injector.py`
-
-### Intelligence / Threat Detection
-
-- `stix_threat_matcher.py`
-- `threat_feed_watcher.py`
-- `firmware_cve_mapper.py`
-- `zero_day_mapper.py`
-- `mitre_mapper.py`
-
-### AI / Anomaly Detection
-
-- `entropy_analyzer.py`
-- `entropy_stix_chain.py`
-- `yara_firmware_scanner.py`
-- `yara_mapper.py`
-- `yara_stix_exporter.py`
-- `telemetry_lstm_monitor.py`
-- `gnss_ai_anomaly_detector.py`
-
-### Copilot / C2 Control
-
-- `copilot_ai.py`
-- `agent_commander.py`
-- `agent_fingerprint_logger.py`
-
-### Dashboard / GUI
-
-- `dashboard_ws_server.py`
-- `ws_live_dashboard.py`
-- `mapview_dashboard.py`
-- `dashboard_log_viewer.html`
-- `playback_panel.py`
-- `firmware_gui_trigger.py`
-- `login_server.py`
-- `mitre_tracker.py`
-
-### Visualization / Statistics
-
-- `attack_frequency_heatmap.py`
-- `event_visualizer.py`
-
----
-
-## Documentation
-
-Detailed usage and configuration available in:
-
-```
-docs/wiki/
-|- Overview.md
-|- Anomaly_Detection.md
-|- Firmware_Security.md
-|- Configuration.md
-|- index.html
+```bash
+satellite-defense-toolkit/
+├── config/                  # Configuration files (agents, targets)
+├── core/                    # Core utilities (audit, logging, security)
+├── docs/wiki/               # Markdown documentation and guides
+├── logs/                    # Execution logs and dashboard logs
+├── modules/                 # Categorized modules
+│   ├── ai/                  # AI-assisted classification and summaries
+│   ├── analysis/            # Telemetry, signal, and traffic analysis
+│   ├── attacks/             # Offensive and red team payloads
+│   ├── c2/                  # Command-and-control modules
+│   ├── copilot/             # Copilot automation and advisory modules
+│   ├── dashboard/           # Dashboard internal services
+│   ├── defense/             # Hardening and anomaly prevention
+│   ├── firmware/            # Firmware validation, implants, rollback
+│   ├── forensics/           # OTA, firmware, memory analysis
+│   ├── intel/               # Threat intel and enrichment
+│   ├── simulation/          # GNSS spoofing, telemetry simulation
+│   ├── stats/               # Metrics, timelines, heatmaps
+│   └── visualization/       # Graphs, maps, visual exports
+├── results/                 # Generated results, STIX, summaries
+├── webgui/                  # GUI and dashboard WebSocket interface
+├── satellite_defense_toolkit_gui.py   # Main GUI launcher
+├── satellite_defense_toolkit_cli.py   # Command-line interface
+├── run_toolkit.sh           # Main launcher script
+├── setup.py                 # Install and entrypoint definition
+└── README.md                # This file
 ```
 
 ---
 
-## GitHub Repository
+## Usage
 
-Main repository and documentation:
+### GUI Mode
 
-https://github.com/s0m3on35/satellite-defense-tookit
+```bash
+python3 satellite_defense_toolkit_gui.py
+```
+
+- Launches a full GUI with tabbed module browsing, execution logs, agent selector, and audit trail.
+
+### CLI Mode
+
+```bash
+python3 satellite_defense_toolkit_cli.py
+```
+
+- Interactive CLI menu to run or chain modules, view logs, and select agents.
+
+### Web Dashboard
+
+```bash
+python3 webgui/dashboard_ws_server.py
+```
+
+- Starts the WebSocket server to receive events from GUI/CLI and display real-time module execution, agent metrics, logs, and visual alerts.
 
 ---
 
-## Usage Notice
+## Installation
 
-This repository is NOT authorized for redistribution, commercial use, or forking without express written permission. All rights reserved.
+```bash
+pip install -r requirements.txt
+```
+
+Or using the included setup script:
+
+```bash
+python3 setup.py install
+```
+
+---
+
+## Requirements
+
+- Python 3.8+
+- Linux (preferred), macOS (partial support)
+- Dependencies listed in `setup.py`, including:
+  - `stix2`, `websocket-client`, `flask`, `flask-socketio`
+  - `tensorflow`, `torch`, `transformers`, `psutil`
+  - `opencv-python`, `matplotlib`, `scapy`, `yara-python`
+  - `aioblescan`, `blesuite`, `vosk`, `pyttsx3`
+
+---
+
+## Logging and Audit
+
+- Logs: Stored in `logs/`
+- Audit trail JSONL: All module executions logged with timestamp, path, and agent
+- CLI logs: `logs/cli_audit_log.jsonl`
+- GUI logs: `logs/audit_trail.jsonl`
+
+---
+
+## STIX/TAXII Integration
+
+- Outputs from several modules include STIX bundles (`results/stix_bundle.json`)
+- Can be exported to external TAXII servers for threat sharing
+
+---
+
+## Agent Management
+
+- All agents are listed in `config/agent_inventory.json`
+- Agents can be selected from the GUI or CLI when executing modules
+- Dashboard receives events with agent context for mapping
+
+---
+
+## Contribution
+
+This is a professional-grade toolkit. If contributing:
+
+- Ensure modules are real, functional, and tested
+- Avoid placeholder logic or simulated outputs
+- Follow the modular structure and use `logs/`, `results/` folders accordingly
+- Document new modules in `docs/wiki/`
+
+---
+
+## License
+
+MIT License – See `LICENSE.md`
+
+---
+
+## Author
+
+Maintained by the Satellite Offensive Research Division.
+
+GitHub: [https://github.com/s0m3on35/satellite-defense-tookit](https://github.com/s0m3on35/satellite-defense-tookit)

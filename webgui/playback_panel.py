@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Route: webgui/playback_panel.py
-# Description: Enhanced playback of historical events to the Satellite Defense Toolkit dashboard WebSocket
+# Description: Advanced historical event replay engine for Satellite Defense Toolkit
 
 import asyncio
 import websockets
@@ -8,15 +8,14 @@ import json
 import os
 import argparse
 from datetime import datetime
+from collections import Counter
+from tqdm import tqdm  #
 
-LOG_FILE = "logs/dashboard/dashboard_stream.log"
+PRIMARY_LOG = "logs/dashboard/dashboard_stream.log"
+FALLBACK_LOG = "logs/dashboard/backup_stream.log"
 DEFAULT_WS_URI = "ws://localhost:8765"
 
 def parse_log_line(line):
-    """
-    Parses a log line into a structured event dictionary.
-    Supports: [timestamp] type [id]: message
-    """
     try:
         if not line.strip().startswith("["):
             return None
@@ -31,14 +30,10 @@ def parse_log_line(line):
             "type": event_type.strip().lower(),
             "message": message.strip()
         }
-    except Exception as e:
-        print(f"[!] Parse error: {e}")
+    except Exception:
         return None
 
 def filter_events(lines, type_filter=None, keyword=None, since=None):
-    """
-    Applies optional filters to raw log lines.
-    """
     results = []
     for line in lines:
         event = parse_log_line(line)
@@ -58,12 +53,16 @@ def filter_events(lines, type_filter=None, keyword=None, since=None):
         results.append(event)
     return results
 
+def summarize(events):
+    counter = Counter([e["type"] for e in events])
+    print("\n[+] Event Type Summary:")
+    for k, v in counter.items():
+        print(f"   - {k}: {v}")
+    print(f"   Total: {len(events)} events\n")
+
 async def replay_events(ws_uri, events, delay=0.5, dry_run=False):
-    """
-    Sends events to the specified WebSocket server with delay between each.
-    """
     if dry_run:
-        print("[*] Dry-run mode: printing events without sending")
+        print("[*] Dry-run mode. Preview only.")
         for event in events:
             print(f"[DRY] {event['timestamp']} | {event['type']} | {event['message']}")
             await asyncio.sleep(delay)
@@ -71,10 +70,9 @@ async def replay_events(ws_uri, events, delay=0.5, dry_run=False):
 
     try:
         async with websockets.connect(ws_uri) as ws:
-            print(f"[+] Connected to {ws_uri}")
-            for event in events:
+            print(f"[✓] Connected to {ws_uri}")
+            for event in tqdm(events, desc="Replaying events"):
                 await ws.send(json.dumps(event))
-                print(f"[→] Sent: {event['type']} - {event['message']}")
                 await asyncio.sleep(delay)
     except Exception as e:
         print(f"[!] WebSocket error: {e}")
@@ -87,17 +85,25 @@ def parse_args():
     parser.add_argument("--type", help="Filter by event type (e.g., alert, telemetry)")
     parser.add_argument("--keyword", help="Only include events containing this keyword")
     parser.add_argument("--since", help="Only include logs after this timestamp (YYYY-MM-DDTHH:MM:SS)")
-    parser.add_argument("--dry", action="store_true", help="Dry-run mode (print events, don't send)")
+    parser.add_argument("--dry", action="store_true", help="Dry-run mode (preview only)")
+    parser.add_argument("--ask", action="store_true", help="Prompt user before starting replay")
     return parser.parse_args()
+
+def load_log_file():
+    if os.path.exists(PRIMARY_LOG):
+        return open(PRIMARY_LOG).readlines()
+    elif os.path.exists(FALLBACK_LOG):
+        print("[!] Primary log missing, using fallback log.")
+        return open(FALLBACK_LOG).readlines()
+    else:
+        print("[!] No valid log files found.")
+        return []
 
 def main():
     args = parse_args()
-    if not os.path.exists(LOG_FILE):
-        print(f"[!] Log file not found: {LOG_FILE}")
+    lines = load_log_file()
+    if not lines:
         return
-
-    with open(LOG_FILE, "r") as f:
-        lines = f.readlines()
 
     since_dt = None
     if args.since:
@@ -105,6 +111,7 @@ def main():
             since_dt = datetime.strptime(args.since, "%Y-%m-%dT%H:%M:%S")
         except:
             print("[!] Invalid --since format. Use YYYY-MM-DDTHH:MM:SS")
+            return
 
     events = filter_events(
         lines,
@@ -117,8 +124,16 @@ def main():
         events = events[:args.limit]
 
     if not events:
-        print("[!] No matching events found.")
+        print("[!] No matching events to replay.")
         return
+
+    summarize(events)
+
+    if args.ask:
+        proceed = input("Proceed with replay? (y/N): ").strip().lower()
+        if proceed != 'y':
+            print("[*] Cancelled by user.")
+            return
 
     asyncio.run(replay_events(args.target, events, args.delay, dry_run=args.dry))
 

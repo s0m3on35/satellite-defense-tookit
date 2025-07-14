@@ -8,7 +8,7 @@ MITRE_TEMPLATE = """
 <html>
 <head><title>MITRE Tracker</title></head>
 <body>
-<h2>🔬 MITRE ATT&CK Phase Tracker</h2>
+<h2> MITRE ATT&CK Phase Tracker</h2>
 <table border="1">
 <tr><th>Tactic</th><th>Technique</th><th>Last Seen</th></tr>
 {% for tactic, entries in data.items() %}

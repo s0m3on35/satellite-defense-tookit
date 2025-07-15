@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-# Path: satellite_defense_toolkit_gui.py
+# File: satellite_defense_toolkit_gui.py
 
 import tkinter as tk
 from tkinter import ttk, filedialog, simpledialog
-import subprocess
-import threading
-import os
-import json
-import time
+import subprocess, threading, os, json, time
 import websocket
 
 DASHBOARD_WS_URL = "ws://localhost:8765"
@@ -31,31 +27,20 @@ MODULE_GROUPS = {
     },
     "AI & Analysis": {
         "Threat Summary LLM": "modules/ai/threat_summary_llm.py",
-        "AI Rule Generator": "modules/ai/ai_rule_generator.py",
-        "Telemetry Anomaly Predictor": "modules/ai/telemetry_anomaly_predictor.py",
-        "GPT Log Intelligence": "modules/ai/gpt_log_intelligence.py",
-        "GPT Remote Analyzer": "modules/ai/gpt_remote_analyzer.py",
-        "Threat Classifier": "modules/ai/threat_classifier.py"
+        "Threat Classifier": "modules/ai/threat_classifier.py",
+        "Copilot Engine": "modules/copilot/copilot_ai.py"
     },
     "Forensics": {
         "Firmware Timeline Builder": "modules/forensics/firmware_timeline_builder.py",
-        "Flash Sector Dumper": "modules/forensics/flash_sector_dumper.py",
-        "Memwatch Agent": "modules/forensics/memwatch_agent.py",
-        "OTA Packet Analyzer": "modules/forensics/ota_packet_analyzer.py"
+        "OTA Packet Analyzer": "modules/forensics/ota_packet_analyzer.py",
+        "Memwatch Agent": "modules/forensics/memwatch_agent.py"
     },
     "Attacks": {
         "GNSS Spoofer": "modules/attacks/gnss_spoofer.py",
-        "RF Jammer DOS": "modules/attacks/rf_jammer_dos.py",
-        "Payload Launcher": "modules/attacks/payload_launcher.py",
-        "SATCOM C2 Hijacker": "modules/attacks/satcom_c2_hijacker.py",
-        "Telemetry Data Spoofer": "modules/attacks/telemetry_data_spoofer.py",
-        "Firmware Persistent Implant": "modules/attacks/firmware_persistent_implant.py",
         "OTA Firmware Injector": "modules/attacks/ota_firmware_injector.py",
-        "Satellite Dish Aim Override": "modules/attacks/satellite_dish_aim_override.py"
-    },
-    "C2": {
-        "Agent Commander": "modules/c2/agent_commander.py",
-        "Agent Fingerprint Logger": "modules/c2/agent_fingerprint_logger.py"
+        "Firmware Persistent Implant": "modules/attacks/firmware_persistent_implant.py",
+        "Payload Launcher": "modules/attacks/payload_launcher.py",
+        "SATCOM C2 Hijacker": "modules/attacks/satcom_c2_hijacker.py"
     }
 }
 
@@ -68,43 +53,40 @@ class SatelliteDefenseToolkitGUI:
         self.ws = None
         self.run_history = []
 
-        self.agents = []
-        self.agent_file = "webgui/agents.json"
         self.load_agents()
-
-        self.agent_var = tk.StringVar(value=self.agents[0] if self.agents else "default")
         self.connect_to_websocket()
         self.create_interface()
 
     def connect_to_websocket(self):
         try:
-            self.ws = websocket.create_connection(DASHBOARD_WS_URL, timeout=3)
-            self.send_dashboard_event("gui_online", "GUI launched")
+            self.ws = websocket.create_connection(DASHBOARD_WS_URL, timeout=2)
+            self.send_dashboard_event("gui_online", "GUI initialized")
         except Exception as e:
-            self.log(f"[WebSocket] Offline: {e}")
+            self.log(f"[WebSocket] Not connected: {e}")
             self.ws = None
 
     def send_dashboard_event(self, evt_type, msg):
         if self.ws:
             try:
-                self.ws.send(json.dumps({
+                payload = {
                     "timestamp": time.time(),
                     "type": evt_type,
                     "message": msg,
                     "agent": self.agent_var.get()
-                }))
+                }
+                self.ws.send(json.dumps(payload))
             except:
                 self.ws = None
 
     def load_agents(self):
-        if os.path.exists(self.agent_file):
-            try:
-                with open(self.agent_file) as f:
-                    self.agents = [x['id'] for x in json.load(f)]
-            except:
-                self.agents = []
-        if not self.agents:
-            self.agents = ["default"]
+        self.agents = ["default"]
+        try:
+            with open("webgui/agents.json") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    self.agents = [x["id"] for x in data if "id" in x]
+        except:
+            pass
 
     def create_interface(self):
         self.tab_control = ttk.Notebook(self.root)
@@ -113,6 +95,7 @@ class SatelliteDefenseToolkitGUI:
         topbar = tk.Frame(self.root, bg="#1a1a1a")
         topbar.pack(fill=tk.X)
 
+        self.agent_var = tk.StringVar(value=self.agents[0])
         agent_dropdown = ttk.Combobox(topbar, textvariable=self.agent_var, values=self.agents, width=30)
         agent_dropdown.pack(side=tk.LEFT, padx=10, pady=5)
 
@@ -147,14 +130,10 @@ class SatelliteDefenseToolkitGUI:
         tk.Button(buttons, text="Run Sequence", command=self.run_module_chain, width=20).pack(side=tk.LEFT, padx=10)
 
     def toggle_theme(self):
-        if self.theme == "dark":
-            self.theme = "light"
-            self.root.configure(bg="#f0f0f0")
-            self.output.configure(bg="white", fg="black")
-        else:
-            self.theme = "dark"
-            self.root.configure(bg="#0f0f0f")
-            self.output.configure(bg="black", fg="lime")
+        self.theme = "light" if self.theme == "dark" else "dark"
+        bg, fg = ("white", "black") if self.theme == "light" else ("black", "lime")
+        self.root.configure(bg=bg)
+        self.output.configure(bg=bg, fg=fg)
 
     def get_active_module(self):
         current_tab = self.tab_control.tab(self.tab_control.select(), "text")
@@ -225,7 +204,7 @@ class SatelliteDefenseToolkitGUI:
         if path:
             with open(path, "w") as f:
                 f.write(self.output.get("1.0", tk.END))
-            self.log(f"[✓] Saved to {path}")
+            self.log(f"[✔] Saved to {path}")
 
     def search_modules(self, *args):
         query = self.search_var.get().lower()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Route: satellite_defense_toolkit_gui.py
+# Path: satellite_defense_toolkit_gui.py
 
 import tkinter as tk
 from tkinter import ttk, filedialog, simpledialog
@@ -15,15 +15,12 @@ AUDIT_TRAIL_LOG = "logs/audit_trail.jsonl"
 
 MODULE_GROUPS = {
     "Defense": {
-        "Binary Integrity Watcher": "modules/defense/binary_integrity_watcher.py",
-        "Firewall Rule Generator": "modules/defense/firewall_rule_generator.py",
         "Firmware Integrity Watcher": "modules/defense/firmware_integrity_watcher.py",
         "Firmware Memory Shield": "modules/defense/firmware_memory_shield.py",
         "Firmware Rollback Protector": "modules/defense/firmware_rollback_protector.py",
         "Firmware Signature Validator": "modules/defense/firmware_signature_validator.py",
         "GNSS Spoof Guard": "modules/defense/gnss_spoof_guard.py",
         "Interface Integrity Monitor": "modules/defense/interface_integrity_monitor.py",
-        "Kernel Module Guard": "modules/defense/kernel_module_guard.py",
         "Live Integrity Watcher": "modules/defense/live_integrity_watcher.py",
         "OTA Guard": "modules/defense/ota_guard.py",
         "OTA Stream Guard": "modules/defense/ota_stream_guard.py",
@@ -33,21 +30,32 @@ MODULE_GROUPS = {
         "Telemetry Guardian": "modules/defense/telemetry_guardian.py"
     },
     "AI & Analysis": {
-        "Threat Classifier AI": "modules/ai/threat_classifier.py",
         "Threat Summary LLM": "modules/ai/threat_summary_llm.py",
-        "AI Copilot Engine": "modules/copilot/copilot_ai.py"
+        "AI Rule Generator": "modules/ai/ai_rule_generator.py",
+        "Telemetry Anomaly Predictor": "modules/ai/telemetry_anomaly_predictor.py",
+        "GPT Log Intelligence": "modules/ai/gpt_log_intelligence.py",
+        "GPT Remote Analyzer": "modules/ai/gpt_remote_analyzer.py",
+        "Threat Classifier": "modules/ai/threat_classifier.py"
     },
     "Forensics": {
         "Firmware Timeline Builder": "modules/forensics/firmware_timeline_builder.py",
+        "Flash Sector Dumper": "modules/forensics/flash_sector_dumper.py",
         "Memwatch Agent": "modules/forensics/memwatch_agent.py",
         "OTA Packet Analyzer": "modules/forensics/ota_packet_analyzer.py"
     },
     "Attacks": {
-        "OTA Firmware Injector": "modules/attacks/ota_firmware_injector.py",
-        "Firmware Persistent Implant": "modules/attacks/firmware_persistent_implant.py",
         "GNSS Spoofer": "modules/attacks/gnss_spoofer.py",
+        "RF Jammer DOS": "modules/attacks/rf_jammer_dos.py",
+        "Payload Launcher": "modules/attacks/payload_launcher.py",
         "SATCOM C2 Hijacker": "modules/attacks/satcom_c2_hijacker.py",
-        "Payload Launcher": "modules/attacks/payload_launcher.py"
+        "Telemetry Data Spoofer": "modules/attacks/telemetry_data_spoofer.py",
+        "Firmware Persistent Implant": "modules/attacks/firmware_persistent_implant.py",
+        "OTA Firmware Injector": "modules/attacks/ota_firmware_injector.py",
+        "Satellite Dish Aim Override": "modules/attacks/satellite_dish_aim_override.py"
+    },
+    "C2": {
+        "Agent Commander": "modules/c2/agent_commander.py",
+        "Agent Fingerprint Logger": "modules/c2/agent_fingerprint_logger.py"
     }
 }
 
@@ -60,8 +68,12 @@ class SatelliteDefenseToolkitGUI:
         self.ws = None
         self.run_history = []
 
-        self.connect_to_websocket()
+        self.agents = []
+        self.agent_file = "webgui/agents.json"
         self.load_agents()
+
+        self.agent_var = tk.StringVar(value=self.agents[0] if self.agents else "default")
+        self.connect_to_websocket()
         self.create_interface()
 
     def connect_to_websocket(self):
@@ -70,6 +82,7 @@ class SatelliteDefenseToolkitGUI:
             self.send_dashboard_event("gui_online", "GUI launched")
         except Exception as e:
             self.log(f"[WebSocket] Offline: {e}")
+            self.ws = None
 
     def send_dashboard_event(self, evt_type, msg):
         if self.ws:
@@ -84,8 +97,6 @@ class SatelliteDefenseToolkitGUI:
                 self.ws = None
 
     def load_agents(self):
-        self.agents = []
-        self.agent_file = "webgui/agents.json"
         if os.path.exists(self.agent_file):
             try:
                 with open(self.agent_file) as f:
@@ -102,7 +113,6 @@ class SatelliteDefenseToolkitGUI:
         topbar = tk.Frame(self.root, bg="#1a1a1a")
         topbar.pack(fill=tk.X)
 
-        self.agent_var = tk.StringVar(value=self.agents[0])
         agent_dropdown = ttk.Combobox(topbar, textvariable=self.agent_var, values=self.agents, width=30)
         agent_dropdown.pack(side=tk.LEFT, padx=10, pady=5)
 
@@ -215,7 +225,7 @@ class SatelliteDefenseToolkitGUI:
         if path:
             with open(path, "w") as f:
                 f.write(self.output.get("1.0", tk.END))
-            self.log(f"[â] Saved to {path}")
+            self.log(f"[✓] Saved to {path}")
 
     def search_modules(self, *args):
         query = self.search_var.get().lower()

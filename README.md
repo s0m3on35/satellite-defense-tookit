@@ -130,14 +130,7 @@ python3 setup.py install
 
 ---
 
-## Contribution
-
-This is a professional-grade toolkit. If contributing:
-
-- Ensure modules are real, functional, and tested
-- Avoid placeholder logic or simulated outputs
-- Follow the modular structure and use `logs/`, `results/` folders accordingly
-- Document new modules in `docs/wiki/`
+/`
 
 ---
 

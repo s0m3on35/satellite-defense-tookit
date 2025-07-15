@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Ruta: modules/c2/agent_commander.py
+# modules/c2/agent_commander.py
 
 import os
 import json

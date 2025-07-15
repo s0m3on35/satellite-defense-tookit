@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Satellite Defense Toolkit is a comprehensive, military-grade suite for securing, analyzing, and emulating threats against satellite and aerospace systems. It supports red teaming, blue teaming, and forensic operations with a modular design, AI-assisted components, and a fully integrated GUI/CLI/WebSocket dashboard system.
+The Satellite Defense Toolkit is a comprehensive suite for securing, analyzing, and emulating threats against satellite and aerospace systems. It supports red teaming, blue teaming, and forensic operations with a modular design, AI-assisted components, and a fully integrated GUI/CLI/WebSocket dashboard system.
 
 ---
 

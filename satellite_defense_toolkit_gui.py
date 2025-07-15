@@ -10,21 +10,118 @@ DASHBOARD_WS_URL = "ws://localhost:8765"
 AUDIT_TRAIL_LOG = "logs/audit_trail.jsonl"
 
 MODULE_GROUPS = {
+    "Uncategorized": {
+        "Firmware Backdoor Scanner": "modules/firmware_backdoor_scanner.py",
+        "Firmware Unpacker": "modules/firmware_unpacker.py",
+        "Firmware Watcher Agent": "modules/firmware_watcher_agent.py",
+        "Gnss Ai Anomaly Detector": "modules/gnss_ai_anomaly_detector.py",
+        "Mitre Mapper": "modules/mitre_mapper.py",
+        "Rf Jammer Locator": "modules/rf_jammer_locator.py",
+        "Satcom C2 Spoof Detector": "modules/satcom_c2_spoof_detector.py",
+        "Telemetry Lstm Monitor": "modules/telemetry_lstm_monitor.py",
+        "Threat Feed Watcher": "modules/threat_feed_watcher.py",
+    },
+    "Ai": {
+        "Ai Rule Generator": "modules/ai/ai_rule_generator.py",
+        "Gpt Log Intelligence": "modules/ai/gpt_log_intelligence.py",
+        "Gpt Remote Analyzer": "modules/ai/gpt_remote_analyzer.py",
+        "Telemetry Anomaly Predictor": "modules/ai/telemetry_anomaly_predictor.py",
+        "Threat Classifier": "modules/ai/threat_classifier.py",
+        "Threat Summary Llm": "modules/ai/threat_summary_llm.py",
+    },
+    "Analysis": {
+        "Binary Diff Engine": "modules/analysis/binary_diff_engine.py",
+        "Dynamic String Decoder": "modules/analysis/dynamic_string_decoder.py",
+        "Elf Section Analyzer": "modules/analysis/elf_section_analyzer.py",
+        "Entropy Analyzer": "modules/analysis/entropy_analyzer.py",
+        "Entropy Analyzer Gui": "modules/analysis/entropy_analyzer_gui.py",
+        "Entropy Stix Chain": "modules/analysis/entropy_stix_chain.py",
+        "Firmware Cfg Exporter": "modules/analysis/firmware_cfg_exporter.py",
+        "Firmware Obfuscation Classifier": "modules/analysis/firmware_obfuscation_classifier.py",
+        "Firmware Recovery Toolkit": "modules/analysis/firmware_recovery_toolkit.py",
+        "Forensic Event Correlator": "modules/analysis/forensic_event_correlator.py",
+        "Heap Stack Pattern Scanner": "modules/analysis/heap_stack_pattern_scanner.py",
+        "Payload Emulator": "modules/analysis/payload_emulator.py",
+        "Syscall Extractor": "modules/analysis/syscall_extractor.py",
+        "Yara Firmware Scanner": "modules/analysis/yara_firmware_scanner.py",
+        "Yara Mapper": "modules/analysis/yara_mapper.py",
+        "Yara Stix Exporter": "modules/analysis/yara_stix_exporter.py",
+    },
+    "Attacks": {
+        "Firmware Persistent Implant": "modules/attacks/firmware_persistent_implant.py",
+        "Gnss Spoofer": "modules/attacks/gnss_spoofer.py",
+        "Ota Firmware Injector": "modules/attacks/ota_firmware_injector.py",
+        "Payload Launcher": "modules/attacks/payload_launcher.py",
+        "Rf Jammer Dos": "modules/attacks/rf_jammer_dos.py",
+        "Satcom C2 Hijacker": "modules/attacks/satcom_c2_hijacker.py",
+        "Satellite Dish Aim Override": "modules/attacks/satellite_dish_aim_override.py",
+        "Self Compiling Dropper": "modules/attacks/self_compiling_dropper.py",
+        "Telemetry Data Spoofer": "modules/attacks/telemetry_data_spoofer.py",
+    },
+    "C2": {
+        "Agent Commander": "modules/c2/agent_commander.py",
+        "Agent Fingerprint Logger": "modules/c2/agent_fingerprint_logger.py",
+        "Agent Receiver": "modules/c2/agent_receiver.py",
+    },
+    "Copilot": {
+        "Copilot Ai": "modules/copilot/copilot_ai.py",
+    },
+    "Dashboard": {
+        "Yara Dashboard Streamer": "modules/dashboard/yara_dashboard_streamer.py",
+    },
     "Defense": {
+        "Binary Integrity Watcher": "modules/defense/binary_integrity_watcher.py",
+        "Firewall Rule Generator": "modules/defense/firewall_rule_generator.py",
         "Firmware Integrity Watcher": "modules/defense/firmware_integrity_watcher.py",
         "Firmware Memory Shield": "modules/defense/firmware_memory_shield.py",
         "Firmware Rollback Protector": "modules/defense/firmware_rollback_protector.py",
         "Firmware Signature Validator": "modules/defense/firmware_signature_validator.py",
-        "GNSS Spoof Guard": "modules/defense/gnss_spoof_guard.py",
+        "Gnss Spoof Guard": "modules/defense/gnss_spoof_guard.py",
         "Interface Integrity Monitor": "modules/defense/interface_integrity_monitor.py",
+        "Kernel Module Guard": "modules/defense/kernel_module_guard.py",
         "Live Integrity Watcher": "modules/defense/live_integrity_watcher.py",
-        "OTA Guard": "modules/defense/ota_guard.py",
-        "OTA Stream Guard": "modules/defense/ota_stream_guard.py",
-        "RF Injection Barrier": "modules/defense/rf_injection_barrier.py",
+        "Ota Guard": "modules/defense/ota_guard.py",
+        "Ota Stream Guard": "modules/defense/ota_stream_guard.py",
+        "Rf Injection Barrier": "modules/defense/rf_injection_barrier.py",
         "Secure Update Guard": "modules/defense/secure_update_guard.py",
         "System Call Anomaly Watcher": "modules/defense/system_call_anomaly_watcher.py",
-        "Telemetry Guardian": "modules/defense/telemetry_guardian.py"
+        "Telemetry Guardian": "modules/defense/telemetry_guardian.py",
     },
+    "Firmware": {
+        "Firmware Crypto Auditor": "modules/firmware/firmware_crypto_auditor.py",
+        "Firmware Pcap Export": "modules/firmware/firmware_pcap_export.py",
+        "Firmware Stix Export": "modules/firmware/firmware_stix_export.py",
+        "Ota Stream Monitor": "modules/firmware/ota_stream_monitor.py",
+    },
+    "Forensics": {
+        "Firmware Timeline Builder": "modules/forensics/firmware_timeline_builder.py",
+        "Flash Sector Dumper": "modules/forensics/flash_sector_dumper.py",
+        "Memwatch Agent": "modules/forensics/memwatch_agent.py",
+        "Ota Packet Analyzer": "modules/forensics/ota_packet_analyzer.py",
+    },
+    "Gui": {
+        "Firmware Gui Trigger": "modules/gui/firmware_gui_trigger.py",
+    },
+    "Intel": {
+        "Firmware Cve Mapper": "modules/intel/firmware_cve_mapper.py",
+        "Zero Day Mapper": "modules/intel/zero_day_mapper.py",
+    },
+    "Simulation": {
+        "Gnss Spoofer Sim": "modules/simulation/gnss_spoofer_sim.py",
+    },
+    "Stats": {
+        "Attack Frequency Heatmap": "modules/stats/attack_frequency_heatmap.py",
+    },
+    "Threat": {
+        "Stix Threat Matcher": "modules/threat/stix_threat_matcher.py",
+    },
+    "Visualization": {
+        "Event Visualizer": "modules/visualization/event_visualizer.py",
+        "Mapview Dashboard": "modules/visualization/mapview_dashboard.py",
+        "Ws Live Dashboard": "modules/visualization/ws_live_dashboard.py",
+    },
+}
+
     "AI & Analysis": {
         "Threat Summary LLM": "modules/ai/threat_summary_llm.py",
         "Threat Classifier": "modules/ai/threat_classifier.py",
@@ -204,7 +301,7 @@ class SatelliteDefenseToolkitGUI:
         if path:
             with open(path, "w") as f:
                 f.write(self.output.get("1.0", tk.END))
-            self.log(f"[✔] Saved to {path}")
+            self.log(f"[â] Saved to {path}")
 
     def search_modules(self, *args):
         query = self.search_var.get().lower()

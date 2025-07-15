@@ -1,3 +1,6 @@
+# satellite_defense_toolkit_gui.py
+
+```python
 #!/usr/bin/env python3
 # File: satellite_defense_toolkit_gui.py
 
@@ -19,7 +22,7 @@ MODULE_GROUPS = {
         "Rf Jammer Locator": "modules/rf_jammer_locator.py",
         "Satcom C2 Spoof Detector": "modules/satcom_c2_spoof_detector.py",
         "Telemetry Lstm Monitor": "modules/telemetry_lstm_monitor.py",
-        "Threat Feed Watcher": "modules/threat_feed_watcher.py",
+        "Threat Feed Watcher": "modules/threat_feed_watcher.py"
     },
     "Ai": {
         "Ai Rule Generator": "modules/ai/ai_rule_generator.py",
@@ -27,117 +30,37 @@ MODULE_GROUPS = {
         "Gpt Remote Analyzer": "modules/ai/gpt_remote_analyzer.py",
         "Telemetry Anomaly Predictor": "modules/ai/telemetry_anomaly_predictor.py",
         "Threat Classifier": "modules/ai/threat_classifier.py",
-        "Threat Summary Llm": "modules/ai/threat_summary_llm.py",
-    },
-    "Analysis": {
-        "Binary Diff Engine": "modules/analysis/binary_diff_engine.py",
-        "Dynamic String Decoder": "modules/analysis/dynamic_string_decoder.py",
-        "Elf Section Analyzer": "modules/analysis/elf_section_analyzer.py",
-        "Entropy Analyzer": "modules/analysis/entropy_analyzer.py",
-        "Entropy Analyzer Gui": "modules/analysis/entropy_analyzer_gui.py",
-        "Entropy Stix Chain": "modules/analysis/entropy_stix_chain.py",
-        "Firmware Cfg Exporter": "modules/analysis/firmware_cfg_exporter.py",
-        "Firmware Obfuscation Classifier": "modules/analysis/firmware_obfuscation_classifier.py",
-        "Firmware Recovery Toolkit": "modules/analysis/firmware_recovery_toolkit.py",
-        "Forensic Event Correlator": "modules/analysis/forensic_event_correlator.py",
-        "Heap Stack Pattern Scanner": "modules/analysis/heap_stack_pattern_scanner.py",
-        "Payload Emulator": "modules/analysis/payload_emulator.py",
-        "Syscall Extractor": "modules/analysis/syscall_extractor.py",
-        "Yara Firmware Scanner": "modules/analysis/yara_firmware_scanner.py",
-        "Yara Mapper": "modules/analysis/yara_mapper.py",
-        "Yara Stix Exporter": "modules/analysis/yara_stix_exporter.py",
-    },
-    "Attacks": {
-        "Firmware Persistent Implant": "modules/attacks/firmware_persistent_implant.py",
-        "Gnss Spoofer": "modules/attacks/gnss_spoofer.py",
-        "Ota Firmware Injector": "modules/attacks/ota_firmware_injector.py",
-        "Payload Launcher": "modules/attacks/payload_launcher.py",
-        "Rf Jammer Dos": "modules/attacks/rf_jammer_dos.py",
-        "Satcom C2 Hijacker": "modules/attacks/satcom_c2_hijacker.py",
-        "Satellite Dish Aim Override": "modules/attacks/satellite_dish_aim_override.py",
-        "Self Compiling Dropper": "modules/attacks/self_compiling_dropper.py",
-        "Telemetry Data Spoofer": "modules/attacks/telemetry_data_spoofer.py",
-    },
-    "C2": {
-        "Agent Commander": "modules/c2/agent_commander.py",
-        "Agent Fingerprint Logger": "modules/c2/agent_fingerprint_logger.py",
-        "Agent Receiver": "modules/c2/agent_receiver.py",
+        "Threat Summary Llm": "modules/ai/threat_summary_llm.py"
     },
     "Copilot": {
-        "Copilot Ai": "modules/copilot/copilot_ai.py",
+        "Copilot Engine": "modules/copilot/copilot_ai.py"
     },
-    "Dashboard": {
-        "Yara Dashboard Streamer": "modules/dashboard/yara_dashboard_streamer.py",
+    "Forensics": {
+        "Firmware Timeline Builder": "modules/forensics/firmware_timeline_builder.py",
+        "Memwatch Agent": "modules/forensics/memwatch_agent.py",
+        "Ota Packet Analyzer": "modules/forensics/ota_packet_analyzer.py"
     },
     "Defense": {
-        "Binary Integrity Watcher": "modules/defense/binary_integrity_watcher.py",
-        "Firewall Rule Generator": "modules/defense/firewall_rule_generator.py",
         "Firmware Integrity Watcher": "modules/defense/firmware_integrity_watcher.py",
         "Firmware Memory Shield": "modules/defense/firmware_memory_shield.py",
         "Firmware Rollback Protector": "modules/defense/firmware_rollback_protector.py",
         "Firmware Signature Validator": "modules/defense/firmware_signature_validator.py",
         "Gnss Spoof Guard": "modules/defense/gnss_spoof_guard.py",
         "Interface Integrity Monitor": "modules/defense/interface_integrity_monitor.py",
-        "Kernel Module Guard": "modules/defense/kernel_module_guard.py",
         "Live Integrity Watcher": "modules/defense/live_integrity_watcher.py",
         "Ota Guard": "modules/defense/ota_guard.py",
         "Ota Stream Guard": "modules/defense/ota_stream_guard.py",
         "Rf Injection Barrier": "modules/defense/rf_injection_barrier.py",
         "Secure Update Guard": "modules/defense/secure_update_guard.py",
         "System Call Anomaly Watcher": "modules/defense/system_call_anomaly_watcher.py",
-        "Telemetry Guardian": "modules/defense/telemetry_guardian.py",
-    },
-    "Firmware": {
-        "Firmware Crypto Auditor": "modules/firmware/firmware_crypto_auditor.py",
-        "Firmware Pcap Export": "modules/firmware/firmware_pcap_export.py",
-        "Firmware Stix Export": "modules/firmware/firmware_stix_export.py",
-        "Ota Stream Monitor": "modules/firmware/ota_stream_monitor.py",
-    },
-    "Forensics": {
-        "Firmware Timeline Builder": "modules/forensics/firmware_timeline_builder.py",
-        "Flash Sector Dumper": "modules/forensics/flash_sector_dumper.py",
-        "Memwatch Agent": "modules/forensics/memwatch_agent.py",
-        "Ota Packet Analyzer": "modules/forensics/ota_packet_analyzer.py",
-    },
-    "Gui": {
-        "Firmware Gui Trigger": "modules/gui/firmware_gui_trigger.py",
-    },
-    "Intel": {
-        "Firmware Cve Mapper": "modules/intel/firmware_cve_mapper.py",
-        "Zero Day Mapper": "modules/intel/zero_day_mapper.py",
-    },
-    "Simulation": {
-        "Gnss Spoofer Sim": "modules/simulation/gnss_spoofer_sim.py",
-    },
-    "Stats": {
-        "Attack Frequency Heatmap": "modules/stats/attack_frequency_heatmap.py",
-    },
-    "Threat": {
-        "Stix Threat Matcher": "modules/threat/stix_threat_matcher.py",
-    },
-    "Visualization": {
-        "Event Visualizer": "modules/visualization/event_visualizer.py",
-        "Mapview Dashboard": "modules/visualization/mapview_dashboard.py",
-        "Ws Live Dashboard": "modules/visualization/ws_live_dashboard.py",
-    },
-}
-
-    "AI & Analysis": {
-        "Threat Summary LLM": "modules/ai/threat_summary_llm.py",
-        "Threat Classifier": "modules/ai/threat_classifier.py",
-        "Copilot Engine": "modules/copilot/copilot_ai.py"
-    },
-    "Forensics": {
-        "Firmware Timeline Builder": "modules/forensics/firmware_timeline_builder.py",
-        "OTA Packet Analyzer": "modules/forensics/ota_packet_analyzer.py",
-        "Memwatch Agent": "modules/forensics/memwatch_agent.py"
+        "Telemetry Guardian": "modules/defense/telemetry_guardian.py"
     },
     "Attacks": {
-        "GNSS Spoofer": "modules/attacks/gnss_spoofer.py",
-        "OTA Firmware Injector": "modules/attacks/ota_firmware_injector.py",
         "Firmware Persistent Implant": "modules/attacks/firmware_persistent_implant.py",
+        "Gnss Spoofer": "modules/attacks/gnss_spoofer.py",
+        "Ota Firmware Injector": "modules/attacks/ota_firmware_injector.py",
         "Payload Launcher": "modules/attacks/payload_launcher.py",
-        "SATCOM C2 Hijacker": "modules/attacks/satcom_c2_hijacker.py"
+        "Satcom C2 Hijacker": "modules/attacks/satcom_c2_hijacker.py"
     }
 }
 
@@ -218,6 +141,20 @@ class SatelliteDefenseToolkitGUI:
         self.output = tk.Text(self.root, height=10, bg="black", fg="lime", font=("Courier", 10))
         self.output.pack(fill=tk.BOTH, padx=10, pady=5, expand=False)
 
+        self.progress = ttk.Progressbar(self.root, orient="horizontal", mode="determinate", length=1000)
+        self.progress.pack(fill=tk.X, padx=10, pady=5)
+
+        self.sequence_box = tk.Listbox(self.root, font=("Courier", 10), height=5, selectmode=tk.SINGLE)
+        self.sequence_box.pack(fill=tk.X, padx=10, pady=5)
+
+        dragdrop_frame = tk.Frame(self.root)
+        dragdrop_frame.pack(pady=3)
+
+        tk.Button(dragdrop_frame, text="Add to Chain", command=self.add_to_chain, width=18).pack(side=tk.LEFT, padx=5)
+        tk.Button(dragdrop_frame, text="Remove", command=self.remove_from_chain, width=18).pack(side=tk.LEFT, padx=5)
+        tk.Button(dragdrop_frame, text="Run Chain", command=self.run_dragdrop_chain, width=18).pack(side=tk.LEFT, padx=5)
+        tk.Button(dragdrop_frame, text="Clear", command=self.clear_chain_box, width=18).pack(side=tk.LEFT, padx=5)
+
         buttons = tk.Frame(self.root, bg="#0f0f0f")
         buttons.pack(pady=5)
 
@@ -249,7 +186,7 @@ class SatelliteDefenseToolkitGUI:
         self.send_dashboard_event("module_run", f"{name} launched")
         self.run_history.append(name)
         self.log_audit(name, path, args)
-        threading.Thread(target=self.run_script, args=(path, name, args), daemon=True).start()
+        threading.Thread(target=self.run_script_with_progress, args=(path, name, args), daemon=True).start()
 
     def run_module_chain(self):
         chain = simpledialog.askstring("Module Chain", "Enter modules separated by commas:")
@@ -264,17 +201,53 @@ class SatelliteDefenseToolkitGUI:
                     self.log(f"[CHAIN] Running {mod}")
                     self.send_dashboard_event("module_chain", f"{mod} in chain")
                     self.log_audit(mod, path, args)
-                    threading.Thread(target=self.run_script, args=(path, mod, args), daemon=True).start()
+                    threading.Thread(target=self.run_script_with_progress, args=(path, mod, args), daemon=True).start()
                     time.sleep(2)
 
-    def run_script(self, script, name, args=""):
+    def run_script_with_progress(self, script, name, args=""):
         try:
+            self.progress["value"] = 0
+            self.progress.update()
             cmd = ["python3", script] + args.split() if args else ["python3", script]
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            for line in proc.stdout:
+            for i, line in enumerate(proc.stdout):
                 self.log(f"[{name}] {line.strip()}")
+                self.progress["value"] = min(100, i * 5)
+                self.progress.update()
+            self.progress["value"] = 100
+            self.progress.update()
+            self.ai_chain_suggestion(name)
         except Exception as e:
             self.log(f"[Exception] {name} failed: {e}")
+
+    def ai_chain_suggestion(self, current_module):
+        lower = current_module.lower()
+        suggested = []
+        for cat, group in MODULE_GROUPS.items():
+            for name in group:
+                if name.lower() != lower and (
+                    lower.split()[0] in name.lower() or
+                    any(k in name.lower() for k in ["analyzer", "injector", "watcher"])
+                ):
+                    suggested.append(name)
+        if suggested:
+            self.log(f"[Copilot] Suggested next: {', '.join(suggested[:3])}")
+            self.send_dashboard_event("copilot_suggest", f"Suggestions: {', '.join(suggested[:3])}")
+
+    def add_to_chain(self):
+        current_tab = self.tab_control.tab(self.tab_control.select(), "text")
+        listbox = self.module_listboxes.get(current_tab)
+        selected = listbox.get(tk.ACTIVE)
+        if selected:
+            self.sequence_box.insert(tk.END, selected)
+
+    def remove_from_chain(self):
+        selected = self.sequence_box.curselection()
+        if selected:
+            self.sequence_box.delete(selected)
+
+    def clear_chain_box(self):
+        self.sequence_box.delete(0, tk.END)
 
     def log_audit(self, name, path, args=""):
         os.makedirs("logs", exist_ok=True)
@@ -301,7 +274,7 @@ class SatelliteDefenseToolkitGUI:
         if path:
             with open(path, "w") as f:
                 f.write(self.output.get("1.0", tk.END))
-            self.log(f"[â] Saved to {path}")
+            self.log(f"[✔] Saved to {path}")
 
     def search_modules(self, *args):
         query = self.search_var.get().lower()

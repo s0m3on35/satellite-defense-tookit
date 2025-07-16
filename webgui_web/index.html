@@ -2,60 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Satellite Defense Toolkit - Web GUI</title>
+  <title>Satellite Defense Toolkit - Web Interface</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
+
 <body>
-
-  <!-- Onboarding screen -->
-  <div id="onboarding" class="onboarding">
-    <img src="assets/satellite_banner.png" alt="Satellite Defense Toolkit Banner" class="onboarding-image" />
-    <h1 class="onboarding-title">Welcome to Satellite Defense Toolkit</h1>
-    <p class="onboarding-subtitle">Real-time satellite attack detection, defense, and analysis</p>
-    <button id="skipButton" class="onboarding-skip">Skip</button>
-  </div>
-
-  <!-- Main Interface -->
-  <div id="mainUI" class="hidden">
-    <header class="header">
+  <!-- Onboarding -->
+  <div id="onboardingScreen" class="overlay-screen">
+    <div class="onboarding-content">
+      <img src="assets/satellite_banner.png" alt="Satellite Banner" />
       <h1>Satellite Defense Toolkit</h1>
-      <div class="toolbar">
-        <label for="agentSelector">Agent:</label>
-        <select id="agentSelector"></select>
-
-        <label for="categoryFilter">Category:</label>
-        <select id="categoryFilter">
-          <option value="All">All</option>
-        </select>
-
-        <input type="text" id="searchBox" placeholder="Search modules..." />
-      </div>
-    </header>
-
-    <main class="main-layout">
-      <section class="module-section">
-        <h2>Available Modules</h2>
-        <ul id="moduleList" class="scrollable"></ul>
-      </section>
-
-      <section class="chain-section">
-        <h2>Execution Chain</h2>
-        <ul id="chainList" class="drop-zone scrollable"></ul>
-        <div class="actions">
-          <button onclick="runChain()">Run Chain</button>
-          <button onclick="clearChain()">Clear</button>
-          <button onclick="exportChain()">Export</button>
-        </div>
-        <progress id="progressBar" value="0" max="100"></progress>
-      </section>
-    </main>
-
-    <section class="console-section">
-      <h3>Console Output</h3>
-      <pre id="consoleOutput" class="scrollable"></pre>
-    </section>
+      <p>AI-powered offensive and defensive cyber operations at your command.</p>
+      <button onclick="startToolkit()">Launch Toolkit</button>
+    </div>
   </div>
+
+  <!-- Auth Panel (optional) -->
+  <div id="authPanel" class="overlay-panel hidden">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Copilot Panel -->
+  <div id="copilotPanel" class="side-panel hidden">
+    <h3>AI Copilot</h3>
+    <textarea id="copilotInput" placeholder="Ask the AI..."></textarea>
+    <button onclick="askCopilot()">Send</button>
+    <div id="copilotResponse"></div>
+  </div>
+
+  <!-- Module Config Overlay -->
+  <div id="configOverlay" class="overlay-panel hidden">
+    <h3>Configure Module</h3>
+    <textarea id="configEditor"></textarea>
+    <div>
+      <button onclick="saveConfig()">Save</button>
+      <button onclick="closeConfig()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Header Toolbar -->
+  <header class="header">
+    <img src="assets/satellite_banner.png" class="header-logo" alt="Toolkit" />
+    <h1>Satellite Defense Toolkit</h1>
+    <div class="toolbar">
+      <label>Agent:</label>
+      <select id="agentSelector"></select>
+
+      <label>Category:</label>
+      <select id="categoryFilter">
+        <option value="All">All</option>
+      </select>
+
+      <input type="text" id="searchBox" placeholder="Search modules..." />
+      <button onclick="toggleCopilot()">Copilot</button>
+      <button onclick="openAuth()">Login</button>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main class="main-grid">
+    <!-- Modules -->
+    <section class="module-section">
+      <h2>Available Modules</h2>
+      <ul id="moduleList" class="scrollable module-list"></ul>
+    </section>
+
+    <!-- Execution Chain -->
+    <section class="chain-section">
+      <h2>Execution Chain</h2>
+      <ul id="chainList" class="drop-zone scrollable"></ul>
+      <div class="actions">
+        <button onclick="runChain()">Run Chain</button>
+        <button onclick="clearChain()">Clear</button>
+        <button onclick="exportChain()">Export</button>
+      </div>
+      <progress id="progressBar" value="0" max="100"></progress>
+    </section>
+
+    <!-- Agent Map -->
+    <section class="map-section">
+      <h2>Agent Map</h2>
+      <div id="agentMap"></div>
+    </section>
+
+    <!-- Metrics Panel -->
+    <section class="metrics-section">
+      <h2>Operational Metrics</h2>
+      <canvas id="metricsChart"></canvas>
+    </section>
+  </main>
+
+  <!-- Console -->
+  <section class="console-section">
+    <h3>Console Output</h3>
+    <pre id="consoleOutput" class="scrollable"></pre>
+  </section>
+
+  <!-- Audit Log -->
+  <section class="audit-section">
+    <h3>Audit Trail Viewer</h3>
+    <button onclick="loadAudit()">Load Audit Log</button>
+    <pre id="auditOutput" class="scrollable"></pre>
+  </section>
 
   <script src="main.js"></script>
 </body>

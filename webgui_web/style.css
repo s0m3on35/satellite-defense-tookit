@@ -1,0 +1,169 @@
+/* Base Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #000;
+  color: #00ff00;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.sdt-header {
+  background: #111;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #222;
+}
+
+.sdt-header-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.sdt-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #00ff00;
+}
+
+.sdt-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  margin-top: 1rem;
+}
+
+.sdt-control-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.sdt-control-group label {
+  font-size: 0.9rem;
+  color: #39ff14;
+  margin-bottom: 4px;
+}
+
+.sdt-control-group select,
+.sdt-control-group input {
+  padding: 6px 10px;
+  background: #0d0d0d;
+  color: #00ff00;
+  border: 1px solid #39ff14;
+  outline: none;
+}
+
+/* Layout */
+.sdt-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  padding: 1.5rem;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+/* Panels */
+.sdt-module-panel,
+.sdt-chain-panel {
+  display: flex;
+  flex-direction: column;
+  background: #0e0e0e;
+  border: 1px solid #222;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.sdt-module-panel h2,
+.sdt-chain-panel h2 {
+  color: #39ff14;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+/* Scrollable Lists */
+.scrollable {
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.sdt-list,
+.sdt-chain {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px dashed #333;
+  padding: 8px;
+  background: #000;
+}
+
+.sdt-list li,
+.sdt-chain li {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sdt-list li:hover,
+.sdt-chain li:hover {
+  background: #2a2a2a;
+  color: #39ff14;
+  border-color: #39ff14;
+}
+
+/* Action Buttons */
+.sdt-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+button {
+  background: #0d0d0d;
+  color: #00ff00;
+  border: 1px solid #39ff14;
+  padding: 8px 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #1f1f1f;
+}
+
+/* Progress Bar */
+progress {
+  width: 100%;
+  height: 18px;
+  margin-top: 1rem;
+  background: #000;
+  border: 1px solid #39ff14;
+  accent-color: #00ff00;
+}
+
+/* Console */
+.sdt-console {
+  background: #111;
+  padding: 1rem;
+  border-top: 1px solid #222;
+}
+
+#consoleOutput {
+  background: #000;
+  color: #00ff00;
+  font-size: 0.95rem;
+  padding: 10px;
+  height: 180px;
+  overflow-y: auto;
+  border: 1px solid #333;
+}

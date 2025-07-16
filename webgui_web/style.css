@@ -1,192 +1,138 @@
-/* === Base Layout === */
 body {
   margin: 0;
   font-family: 'Courier New', Courier, monospace;
   background-color: #000;
-  color: #00ff00;
+  color: lime;
+}
+
+.header {
+  background-color: #111;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-}
-
-header.header {
-  background-color: #111;
-  padding: 10px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 2px solid #0f0;
-}
-
-header h1 {
-  margin: 0;
-  font-size: 24px;
-  color: #0f0;
+  border-bottom: 2px solid #222;
 }
 
 .toolbar {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
+  padding-top: 10px;
 }
 
-select, input[type="text"], textarea {
+select, input[type="text"], button {
   background-color: #111;
-  color: #0f0;
-  border: 1px solid #0f0;
-  padding: 5px;
+  color: lime;
+  border: 1px solid lime;
+  padding: 6px 10px;
   font-family: inherit;
-  font-size: 14px;
-}
-
-button {
-  background-color: #111;
-  color: #0f0;
-  border: 1px solid #0f0;
-  padding: 5px 10px;
-  cursor: pointer;
 }
 
 button:hover {
-  background-color: #0f0;
-  color: #000;
+  background-color: lime;
+  color: black;
+  cursor: pointer;
 }
 
-/* === Main Grid Layout === */
-main.dashboard-layout {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 20px;
-  padding: 20px;
-  flex: 1;
-  background-color: #000;
-}
-
-/* === Widgets === */
-.module-section, .chain-section, .metrics-section, .map-section,
-.copilot-section, .timeline-section, .audit-section {
-  background-color: #111;
-  border: 1px solid #0f0;
-  padding: 15px;
-  border-radius: 6px;
+.main-layout {
   display: flex;
-  flex-direction: column;
-  height: 100%;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 10px;
+  gap: 10px;
+}
+
+.module-section,
+.chain-section {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #333;
+  background-color: #0f0f0f;
 }
 
 .module-section h2,
 .chain-section h2,
-.metrics-section h2,
-.map-section h2,
-.copilot-section h2,
-.timeline-section h2,
-.audit-section h2 {
+.copilot-section h3,
+.console-section h3,
+.audit-section h3,
+.metrics-section h3,
+.export-section h3 {
   margin-top: 0;
-  font-size: 18px;
-  border-bottom: 1px solid #0f0;
+  border-bottom: 1px solid #333;
   padding-bottom: 5px;
 }
 
-/* === Lists and Drop Areas === */
-ul {
+.scrollable {
+  max-height: 250px;
+  overflow-y: auto;
+  background-color: #000;
+  border: 1px solid #222;
+  padding: 5px;
+  margin-top: 5px;
   list-style-type: none;
-  padding: 0;
-  margin: 0;
 }
 
-.module-list li,
-.drop-zone li {
-  padding: 6px;
-  border-bottom: 1px solid #0f0;
-  cursor: grab;
+li {
+  padding: 4px 8px;
+  border-bottom: 1px solid #222;
+}
+
+li:hover {
+  background-color: #222;
+  cursor: pointer;
 }
 
 .drop-zone {
   min-height: 150px;
-  border: 2px dashed #0f0;
-  padding: 10px;
-}
-
-.scrollable {
-  overflow-y: auto;
-  max-height: 250px;
-  background-color: #000;
-  padding: 10px;
-  font-size: 13px;
-}
-
-/* === Console Output === */
-.console-section {
   background-color: #111;
-  border-top: 2px solid #0f0;
-  padding: 10px 20px;
+  border: 2px dashed lime;
 }
 
-#consoleOutput {
-  background-color: #000;
-  color: #0f0;
-  padding: 10px;
-  font-family: 'Courier New', Courier, monospace;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #0f0;
-}
-
-/* === Copilot Panel === */
-.copilot-chat {
+.actions {
+  margin-top: 10px;
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  gap: 10px;
 }
 
-#copilotOutput {
-  background-color: #000;
-  color: #0f0;
-  height: 100px;
-  border: 1px solid #0f0;
-  padding: 5px;
-  overflow-y: auto;
-}
-
-#copilotInput {
-  width: 100%;
-  resize: none;
-}
-
-/* === Audit Log === */
-.audit-log {
-  font-size: 12px;
-  background-color: #000;
-  color: #0f0;
-  border: 1px solid #0f0;
+.console-section,
+.copilot-section,
+.audit-section,
+.metrics-section,
+.export-section {
   padding: 10px;
-  overflow-y: auto;
-  height: 150px;
+  background-color: #0f0f0f;
+  margin: 10px;
+  border: 1px solid #333;
 }
 
-/* === Map Widget === */
-.map-container {
-  background-color: #000;
-  border: 1px solid #0f0;
-  height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #0f0;
-}
-
-/* === Timeline Widget === */
-.timeline-widget {
-  background-color: #000;
-  border: 1px solid #0f0;
-  height: 100px;
-  color: #0f0;
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 14px;
   padding: 5px;
+  border: 1px solid #222;
+  background-color: #000;
 }
 
-/* === Graph Canvas === */
-#metricsGraph {
+progress {
   width: 100%;
-  border: 1px solid #0f0;
-  background-color: #000;
+  height: 15px;
+  margin-top: 10px;
+  background-color: #111;
+  border: 1px solid #333;
+}
+
+progress::-webkit-progress-bar {
+  background-color: #111;
+}
+
+progress::-webkit-progress-value {
+  background-color: lime;
+}
+
+canvas {
+  background-color: #111;
+  padding: 10px;
+  border: 1px solid #222;
 }

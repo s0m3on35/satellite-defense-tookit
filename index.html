@@ -4,16 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
   <meta property="og:title" content="Satellite Defense Toolkit" />
   <meta property="og:description" content="Secure, Analyze, and Defend Satellites and Space Infrastructure." />
   <meta property="og:image" content="assets/social_preview.jpg" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://s0m3on35.github.io/satellite-defense-toolkit/landing/" />
+  <meta property="og:url" content="https://s0m3on35.github.io/satellite-defense-toolkit/" />
+
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
   <title>Satellite Defense Toolkit</title>
+
   <link rel="stylesheet" href="assets/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3.0.1/tsparticles.bundle.min.js"></script>
 </head>
 
 <body>
@@ -48,14 +49,14 @@
       </div>
     </section>
 
-    <section class="metrics">
-      <h2>Telemetry & Alerts</h2>
-      <canvas id="metricsChart"></canvas>
-    </section>
-
     <section class="about">
       <h2>About the Toolkit</h2>
       <p>The Satellite Defense Toolkit is a professional-grade security framework built for aerospace, satellite, and ground station protection. It combines AI-driven monitoring, exploit simulation, and forensic automation to secure mission-critical space systems.</p>
+    </section>
+
+    <section class="metrics">
+      <h2>Live Metrics</h2>
+      <canvas id="metricsChart" width="100%" height="60"></canvas>
     </section>
 
     <section class="callout">
@@ -67,16 +68,12 @@
     </section>
   </main>
 
-  <div id="copilot-panel">
-    <div class="copilot-header">Copilot AI</div>
-    <div class="copilot-log" id="copilot-log"></div>
-    <input type="text" id="copilot-input" placeholder="Ask the toolkit..." />
-  </div>
-
   <footer>
-    <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations by (D)</p>
+    <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations</p>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3.3.0/tsparticles.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="assets/script.js"></script>
 </body>
 </html>

@@ -9,16 +9,19 @@ body {
   font-family: "Segoe UI", Roboto, sans-serif;
   background-color: #0a0f1c;
   color: #e0e6ed;
+  line-height: 1.6;
   overflow-x: hidden;
   position: relative;
 }
 
-#tsparticles {
-  position: fixed;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+a {
+  color: #1abc9c;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #16a085;
 }
 
 header.hero {
@@ -40,7 +43,7 @@ header .overlay {
   padding: 40px;
   text-align: center;
   border-radius: 12px;
-  max-width: 720px;
+  max-width: 700px;
   animation: fadeInUp 1s ease forwards;
   opacity: 0;
   transform: translateY(20px);
@@ -84,6 +87,7 @@ h2 {
   margin-bottom: 30px;
   text-align: center;
   color: #ffffff;
+  position: relative;
   animation: fadeInDown 1s ease forwards;
   opacity: 0;
   transform: translateY(-20px);
@@ -138,31 +142,33 @@ h2 {
 }
 
 .callout {
-  margin-top: 60px;
+  margin-top: 80px;
   text-align: center;
-  background: #1c2433;
-  padding: 40px;
-  border-radius: 10px;
+  background: #1b2735;
+  padding: 60px 20px;
+  border-radius: 12px;
   animation: fadeInUp 1s ease forwards;
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(40px);
 }
 
-.callout p {
-  margin-bottom: 20px;
-  font-size: 1rem;
-  color: #cdd4e0;
-}
-
-.cta.secondary {
-  background: transparent;
-  border: 2px solid #1abc9c;
+.callout h2 {
   color: #1abc9c;
 }
 
-.cta.secondary:hover {
+.callout .cta.secondary {
+  margin-top: 25px;
+  display: inline-block;
+  background: transparent;
+  border: 2px solid #1abc9c;
+  color: #1abc9c;
+  padding: 12px 26px;
+  border-radius: 6px;
+}
+
+.callout .cta.secondary:hover {
   background: #1abc9c;
-  color: white;
+  color: #fff;
 }
 
 footer {
@@ -177,57 +183,72 @@ footer {
   transform: translateY(20px);
 }
 
-#metrics {
-  margin-top: 80px;
-  text-align: center;
-  animation: fadeInUp 1s ease forwards;
-  opacity: 0;
-  transform: translateY(30px);
-}
-
-#metrics canvas {
-  max-width: 800px;
-  margin: 0 auto;
-  display: block;
-}
-
-#copilot {
-  margin-top: 80px;
-  background: #1c2433;
-  padding: 30px;
-  border-radius: 12px;
-  animation: fadeInUp 1s ease forwards;
-  opacity: 0;
-  transform: translateY(30px);
-}
-
-#copilot h2 {
-  color: #1abc9c;
-}
-
-#copilotInput {
+#particles-js {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
   width: 100%;
+  height: 100%;
+}
+
+#copilot-chat {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  width: 320px;
+  height: 420px;
+  background: #121a28;
+  border: 1px solid #1abc9c;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  overflow: hidden;
+}
+
+#copilot-chat-header {
+  background: #1abc9c;
   padding: 12px;
+  font-weight: bold;
+  color: #fff;
+}
+
+#copilot-chat-messages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  color: #e0e6ed;
+  font-size: 0.92rem;
+}
+
+#copilot-chat-input {
+  display: flex;
+  border-top: 1px solid #1abc9c;
+}
+
+#copilot-chat-input input {
+  flex: 1;
+  padding: 10px;
   border: none;
-  border-radius: 8px;
-  margin-top: 20px;
-  font-size: 1rem;
-  background: #2e3b4e;
+  outline: none;
+  background: #0f172a;
   color: #e0e6ed;
 }
 
-#copilotOutput {
-  margin-top: 20px;
-  background: #141b25;
-  padding: 20px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  color: #d1d8e0;
-  min-height: 60px;
-  white-space: pre-wrap;
+#copilot-chat-input button {
+  background: #1abc9c;
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
 
-/* Animations */
+#copilot-chat-input button:hover {
+  background: #159d85;
+}
+
 @keyframes fadeInUp {
   to {
     opacity: 1;

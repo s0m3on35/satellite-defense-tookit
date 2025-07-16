@@ -1,5 +1,41 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const animatedElements = document.querySelectorAll(".card, .about, .callout, header .overlay, h2, footer");
+  tsParticles.load("tsparticles", {
+    fullScreen: { enable: true, zIndex: -1 },
+    particles: {
+      number: { value: 60, density: { enable: true, value_area: 800 } },
+      color: { value: "#00ffff" },
+      shape: { type: "circle" },
+      opacity: { value: 0.3, random: true },
+      size: { value: 3, random: true },
+      move: {
+        enable: true,
+        speed: 1.5,
+        direction: "none",
+        random: false,
+        straight: false,
+        outModes: { default: "bounce" }
+      },
+      links: {
+        enable: true,
+        distance: 120,
+        color: "#00ffff",
+        opacity: 0.3,
+        width: 1
+      }
+    },
+    interactivity: {
+      events: {
+        onhover: { enable: true, mode: "repulse" },
+        onclick: { enable: false }
+      },
+      modes: {
+        repulse: { distance: 100, duration: 0.4 }
+      }
+    },
+    detectRetina: true
+  });
+
+  const animatedElements = document.querySelectorAll(".card, .about, header .overlay, h2, footer");
 
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
@@ -8,13 +44,9 @@ document.addEventListener("DOMContentLoaded", () => {
         observer.unobserve(entry.target);
       }
     });
-  }, {
-    threshold: 0.15
-  });
+  }, { threshold: 0.15 });
 
-  animatedElements.forEach(el => {
-    observer.observe(el);
-  });
+  animatedElements.forEach(el => observer.observe(el));
 
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener("click", function (e) {
@@ -25,30 +57,4 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
-
-  const copilotInput = document.getElementById("copilot-input");
-  const copilotSend = document.getElementById("copilot-send");
-  const copilotMessages = document.getElementById("copilot-messages");
-
-  if (copilotInput && copilotSend && copilotMessages) {
-    copilotSend.addEventListener("click", () => {
-      const message = copilotInput.value.trim();
-      if (!message) return;
-
-      const userMsg = document.createElement("div");
-      userMsg.textContent = "> " + message;
-      copilotMessages.appendChild(userMsg);
-
-      const response = document.createElement("div");
-      response.textContent = "Copilot is thinking...";
-      copilotMessages.appendChild(response);
-
-      copilotMessages.scrollTop = copilotMessages.scrollHeight;
-      copilotInput.value = "";
-
-      setTimeout(() => {
-        response.textContent = "Response not available in demo mode.";
-      }, 1000);
-    });
-  }
 });

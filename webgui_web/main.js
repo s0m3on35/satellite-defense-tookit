@@ -1,152 +1,138 @@
-// File: /webgui_web/main.js
+// === Global State ===
+let modules = [];
+let agents = [];
+let selectedAgent = null;
+let chainList = [];
 
-const moduleList = document.getElementById("moduleList");
-const agentSelector = document.getElementById("agentSelector");
-const categoryFilter = document.getElementById("categoryFilter");
-const searchBox = document.getElementById("searchBox");
-const chainList = document.getElementById("chainList");
-const consoleOutput = document.getElementById("consoleOutput");
-const progressBar = document.getElementById("progressBar");
-
-let allModules = [];
-let chain = [];
-
-// === Load modules from backend ===
-async function loadModules() {
-  const res = await fetch("/api/modules");
-  const modules = await res.json();
-  allModules = modules;
-  populateCategories(modules);
-  renderModules(modules);
-}
-
-// === Load agents ===
-async function loadAgents() {
-  const res = await fetch("/api/agents");
-  const agents = await res.json();
-  agentSelector.innerHTML = "";
+// === Fetch Agents and Modules ===
+async function fetchAgents() {
+  const res = await fetch('/api/agents');
+  agents = await res.json();
+  const selector = document.getElementById('agentSelector');
   agents.forEach(agent => {
-    const option = document.createElement("option");
-    option.value = agent.id;
-    option.textContent = agent.id;
-    agentSelector.appendChild(option);
+    const opt = document.createElement('option');
+    opt.value = agent.id || agent;
+    opt.textContent = agent.id || agent;
+    selector.appendChild(opt);
   });
+  selector.onchange = () => selectedAgent = selector.value;
+  selectedAgent = selector.value;
 }
 
-// === Populate category dropdown ===
-function populateCategories(modules) {
-  const categories = new Set(modules.map(m => m.category));
-  categoryFilter.innerHTML = `<option value="All">All</option>`;
-  categories.forEach(cat => {
-    const opt = document.createElement("option");
-    opt.value = cat;
-    opt.textContent = cat;
-    categoryFilter.appendChild(opt);
-  });
+async function fetchModules() {
+  const res = await fetch('/api/modules');
+  modules = await res.json();
+  populateModuleList();
+  populateCategoryFilter();
 }
 
-// === Render module list based on filter/search ===
-function renderModules(modules) {
-  const search = searchBox.value.toLowerCase();
-  const filter = categoryFilter.value;
-  moduleList.innerHTML = "";
-  modules.forEach(mod => {
-    if ((filter === "All" || mod.category === filter) && mod.name.toLowerCase().includes(search)) {
-      const li = document.createElement("li");
-      li.textContent = `${mod.name} (${mod.category})`;
-      li.classList.add("module-item");
-      li.dataset.file = mod.file;
+// === Populate Module List ===
+function populateModuleList() {
+  const list = document.getElementById('moduleList');
+  list.innerHTML = '';
+  const category = document.getElementById('categoryFilter').value;
+  const search = document.getElementById('searchBox').value.toLowerCase();
+
+  modules
+    .filter(m => (category === 'All' || m.category === category))
+    .filter(m => m.name.toLowerCase().includes(search))
+    .forEach(m => {
+      const li = document.createElement('li');
+      li.textContent = `${m.name} (${m.category})`;
       li.draggable = true;
-
-      li.addEventListener("dragstart", e => {
-        e.dataTransfer.setData("module", JSON.stringify(mod));
-      });
-
-      li.addEventListener("dblclick", () => runModule(mod));
-      moduleList.appendChild(li);
-    }
-  });
+      li.ondragstart = e => {
+        e.dataTransfer.setData('text/plain', JSON.stringify(m));
+      };
+      list.appendChild(li);
+    });
 }
 
-// === Drag/drop to chain ===
-chainList.addEventListener("dragover", e => e.preventDefault());
-chainList.addEventListener("drop", e => {
+// === Populate Categories ===
+function populateCategoryFilter() {
+  const catSet = new Set(modules.map(m => m.category));
+  const filter = document.getElementById('categoryFilter');
+  catSet.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    filter.appendChild(opt);
+  });
+  filter.onchange = populateModuleList;
+  document.getElementById('searchBox').oninput = populateModuleList;
+}
+
+// === Drag & Drop Chain Handling ===
+const chainUl = document.getElementById('chainList');
+chainUl.ondragover = e => e.preventDefault();
+chainUl.ondrop = e => {
   e.preventDefault();
-  const mod = JSON.parse(e.dataTransfer.getData("module"));
-  chain.push(mod);
-  const li = document.createElement("li");
-  li.textContent = mod.name;
-  li.classList.add("chain-item");
-  li.dataset.file = mod.file;
-  chainList.appendChild(li);
-});
-
-// === Run single module ===
-function runModule(mod) {
-  printToConsole(`> Running: ${mod.name}`);
-  progressBar.value = 0;
-  fetch("/api/run", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ file: mod.file })
-  });
-}
-
-// === Run full chain ===
-function runChain() {
-  if (!chain.length) return;
-  printToConsole("> Executing chain...");
-  progressBar.value = 0;
-  fetch("/api/chain", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chain: chain.map(mod => ({ file: mod.file })) })
-  });
-}
-
-// === Export chain to JSON ===
-function exportChain() {
-  const blob = new Blob([JSON.stringify(chain, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "module_chain.json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// === Clear chain UI + array ===
-function clearChain() {
-  chain = [];
-  chainList.innerHTML = "";
-  printToConsole("> Cleared execution chain.");
-}
-
-// === WebSocket console output ===
-const ws = new WebSocket(`ws://${location.hostname}:5000/ws`);
-ws.onmessage = event => {
-  const { line } = JSON.parse(event.data);
-  printToConsole(line);
+  const mod = JSON.parse(e.dataTransfer.getData('text/plain'));
+  chainList.push(mod);
+  renderChainList();
 };
-ws.onopen = () => printToConsole("[✓] WebSocket connected");
-ws.onerror = () => printToConsole("[x] WebSocket connection failed");
 
-// === Print to console output area ===
-function printToConsole(msg) {
-  const span = document.createElement("div");
-  span.textContent = msg;
-  consoleOutput.appendChild(span);
-  consoleOutput.scrollTop = consoleOutput.scrollHeight;
-  progressBar.value = Math.min(progressBar.value + 5, 100);
+function renderChainList() {
+  chainUl.innerHTML = '';
+  chainList.forEach((m, idx) => {
+    const li = document.createElement('li');
+    li.textContent = `${idx + 1}. ${m.name}`;
+    chainUl.appendChild(li);
+  });
 }
 
-// === Bind input events ===
-searchBox.addEventListener("input", () => renderModules(allModules));
-categoryFilter.addEventListener("change", () => renderModules(allModules));
+// === Execution Functions ===
+async function runChain() {
+  if (chainList.length === 0) return;
+  const res = await fetch('/api/chain', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chain: chainList })
+  });
+  logToConsole(`[+] Chain launched: ${res.status}`);
+}
+
+async function exportChain() {
+  const blob = new Blob([JSON.stringify(chainList, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'execution_chain.json';
+  a.click();
+}
+
+function clearChain() {
+  chainList = [];
+  renderChainList();
+}
+
+// === WebSocket Console Logger ===
+function logToConsole(line) {
+  const output = document.getElementById('consoleOutput');
+  output.textContent += line + '\n';
+  output.scrollTop = output.scrollHeight;
+}
+
+function initWebSocket() {
+  const ws = new WebSocket("ws://localhost:5000/socket.io/?EIO=4&transport=websocket");
+
+  ws.onopen = () => logToConsole("[WebSocket] Connected.");
+  ws.onerror = err => logToConsole("[WebSocket] Error: " + err);
+  ws.onmessage = msg => {
+    try {
+      if (msg.data.includes("console_output")) {
+        const payload = JSON.parse(msg.data.split("42")[1]);
+        if (payload && payload[0] === "console_output") {
+          logToConsole(payload[1].line);
+        }
+      }
+    } catch (e) {
+      logToConsole("[WebSocket] Parse error: " + e);
+    }
+  };
+}
 
 // === Init ===
 window.onload = () => {
-  loadModules();
-  loadAgents();
-  printToConsole("> GUI ready.");
+  fetchAgents();
+  fetchModules();
+  initWebSocket();
 };

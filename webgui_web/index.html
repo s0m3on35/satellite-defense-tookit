@@ -5,8 +5,6 @@
   <title>Satellite Defense Toolkit - Web GUI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
   <header class="header">
@@ -24,6 +22,14 @@
     </div>
   </header>
 
+  <section class="hero-banner">
+    <img src="assets/satellite_banner.png" alt="Satellite Defense Banner">
+    <div class="banner-text">
+      <h2>Real-Time Satellite Defense Toolkit</h2>
+      <p>Securing critical systems from GNSS spoofing, OTA injection, and RF threats</p>
+    </div>
+  </section>
+
   <main class="main-layout">
     <section class="module-section">
       <h2>Available Modules</h2>
@@ -36,35 +42,15 @@
       <div class="actions">
         <button onclick="runChain()">Run Chain</button>
         <button onclick="clearChain()">Clear</button>
-        <button onclick="exportChain()">Export Chain</button>
+        <button onclick="exportChain()">Export</button>
       </div>
       <progress id="progressBar" value="0" max="100"></progress>
     </section>
   </main>
 
-  <section class="copilot-section">
-    <h3>AI Copilot Suggestions</h3>
-    <ul id="copilotOutput" class="scrollable"></ul>
-  </section>
-
   <section class="console-section">
     <h3>Console Output</h3>
     <pre id="consoleOutput" class="scrollable"></pre>
-  </section>
-
-  <section class="audit-section">
-    <h3>Audit Trail</h3>
-    <ul id="auditTrail" class="scrollable"></ul>
-  </section>
-
-  <section class="metrics-section">
-    <h3>Execution Metrics</h3>
-    <canvas id="moduleChart" width="800" height="300"></canvas>
-  </section>
-
-  <section class="export-section">
-    <h3>Export Dashboard</h3>
-    <button onclick="exportDashboard()">Download Full Dashboard State</button>
   </section>
 
   <script src="main.js"></script>

@@ -67,4 +67,3 @@ This component is designed to continuously monitor target firmware binaries or m
 - Compatible with dashboard for alert and status updates
 - Works alongside telemetry modules for anomaly correlation
 - Feeds into STIX export modules for threat intelligence sharing
-

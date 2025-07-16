@@ -7,51 +7,55 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="header">
-    <h1>Satellite Defense Toolkit</h1>
-    <div class="toolbar">
-      <label for="agentSelector">Agent:</label>
-      <select id="agentSelector"></select>
 
-      <label for="categoryFilter">Category:</label>
-      <select id="categoryFilter">
-        <option value="All">All</option>
-      </select>
+  <!-- Onboarding screen -->
+  <div id="onboarding" class="onboarding">
+    <img src="assets/satellite_banner.png" alt="Satellite Defense Toolkit Banner" class="onboarding-image" />
+    <h1 class="onboarding-title">Welcome to Satellite Defense Toolkit</h1>
+    <p class="onboarding-subtitle">Real-time satellite attack detection, defense, and analysis</p>
+    <button id="skipButton" class="onboarding-skip">Skip</button>
+  </div>
 
-      <input type="text" id="searchBox" placeholder="Search modules..." />
-    </div>
-  </header>
+  <!-- Main Interface -->
+  <div id="mainUI" class="hidden">
+    <header class="header">
+      <h1>Satellite Defense Toolkit</h1>
+      <div class="toolbar">
+        <label for="agentSelector">Agent:</label>
+        <select id="agentSelector"></select>
 
-  <section class="hero-banner">
-    <img src="assets/satellite_banner.png" alt="Satellite Defense Banner">
-    <div class="banner-text">
-      <h2>Real-Time Satellite Defense Toolkit</h2>
-      <p>Securing critical systems from GNSS spoofing, OTA injection, and RF threats</p>
-    </div>
-  </section>
+        <label for="categoryFilter">Category:</label>
+        <select id="categoryFilter">
+          <option value="All">All</option>
+        </select>
 
-  <main class="main-layout">
-    <section class="module-section">
-      <h2>Available Modules</h2>
-      <ul id="moduleList" class="scrollable"></ul>
-    </section>
-
-    <section class="chain-section">
-      <h2>Execution Chain</h2>
-      <ul id="chainList" class="drop-zone scrollable"></ul>
-      <div class="actions">
-        <button onclick="runChain()">Run Chain</button>
-        <button onclick="clearChain()">Clear</button>
-        <button onclick="exportChain()">Export</button>
+        <input type="text" id="searchBox" placeholder="Search modules..." />
       </div>
-      <progress id="progressBar" value="0" max="100"></progress>
-    </section>
-  </main>
+    </header>
 
-  <section class="console-section">
-    <h3>Console Output</h3>
-    <pre id="consoleOutput" class="scrollable"></pre>
-  </section>
+    <main class="main-layout">
+      <section class="module-section">
+        <h2>Available Modules</h2>
+        <ul id="moduleList" class="scrollable"></ul>
+      </section>
+
+      <section class="chain-section">
+        <h2>Execution Chain</h2>
+        <ul id="chainList" class="drop-zone scrollable"></ul>
+        <div class="actions">
+          <button onclick="runChain()">Run Chain</button>
+          <button onclick="clearChain()">Clear</button>
+          <button onclick="exportChain()">Export</button>
+        </div>
+        <progress id="progressBar" value="0" max="100"></progress>
+      </section>
+    </main>
+
+    <section class="console-section">
+      <h3>Console Output</h3>
+      <pre id="consoleOutput" class="scrollable"></pre>
+    </section>
+  </div>
 
   <script src="main.js"></script>
 </body>

@@ -1,0 +1,181 @@
+/* File: assets/style.css */
+
+/* Core Reset and Layout */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Segoe UI", Roboto, sans-serif;
+  background-color: #0a0f1c;
+  color: #e0e6ed;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Links */
+a {
+  color: #1abc9c;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #16a085;
+}
+
+/* Parallax Hero Section */
+header.hero {
+  background-image: url("hero-bg.jpg");
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+  height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: white;
+}
+
+header .overlay {
+  background: rgba(0, 0, 0, 0.65);
+  padding: 40px;
+  text-align: center;
+  border-radius: 12px;
+  max-width: 700px;
+  animation: fadeInUp 1s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+header h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+header p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+}
+
+.cta {
+  background: #1abc9c;
+  color: white;
+  padding: 12px 28px;
+  font-weight: bold;
+  border-radius: 8px;
+  display: inline-block;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.cta:hover {
+  background: #159d85;
+  transform: scale(1.05);
+}
+
+/* Main Layout */
+main {
+  padding: 60px 20px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 30px;
+  text-align: center;
+  color: #ffffff;
+  position: relative;
+  animation: fadeInDown 1s ease forwards;
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* Cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 30px;
+}
+
+.card {
+  background: #1c2433;
+  border-radius: 10px;
+  padding: 25px;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInCard 1s ease forwards;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 6px 20px rgba(0, 255, 255, 0.2);
+}
+
+.card h3 {
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+  color: #1abc9c;
+}
+
+.card p {
+  color: #d2dbe8;
+  font-size: 0.95rem;
+}
+
+/* About Section */
+.about {
+  margin-top: 60px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(40px);
+  animation: fadeInUp 1s ease forwards;
+}
+
+.about p {
+  max-width: 800px;
+  margin: auto;
+  font-size: 1rem;
+  color: #cdd4e0;
+}
+
+/* Footer */
+footer {
+  background: #10151f;
+  text-align: center;
+  padding: 20px;
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  margin-top: 60px;
+  animation: fadeInUp 1s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* Scroll Animations */
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInCard {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

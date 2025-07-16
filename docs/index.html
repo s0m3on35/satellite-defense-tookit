@@ -1,51 +1,85 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta property="og:title" content="Satellite Defense Toolkit" />
+  <meta property="og:description" content="Secure, Analyze, and Defend Satellites and Space Infrastructure." />
+  <meta property="og:image" content="assets/hero-bg.PNG" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://s0m3on35.github.io/satellite-defense-toolkit/" />
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
   <title>Satellite Defense Toolkit</title>
-  <style>
-    body {
-      background-color: #ffffff;
-      color: #000000;
-      font-family: Arial, sans-serif;
-      padding: 40px;
-      line-height: 1.6;
-    }
-    h1 {
-      color: #1a1a1a;
-      font-size: 32px;
-      margin-bottom: 20px;
-    }
-    ul {
-      list-style-type: disc;
-      margin-left: 20px;
-    }
-    a, a:visited {
-      color: #0066cc;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    img {
-      max-width: 100%;
-      margin-top: 30px;
-      border: 1px solid #ddd;
-    }
-  </style>
+  <link rel="stylesheet" href="assets/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3/tsparticles.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
-  <h1>Satellite Defense Toolkit</h1>
-  <p>The Satellite Defense Toolkit is a modular red and blue team framework for space-based and GNSS cybersecurity research and operations.</p>
-  <ul>
-    <li>GNSS spoofing and anomaly detection</li>
-    <li>RF jammer localization and signal mapping</li>
-    <li>Telemetry analysis and anomaly monitoring</li>
-    <li>Command-line and dashboard interfaces</li>
-    <li>Modular architecture with full automation capabilities</li>
-  </ul>
-  <p><a href="https://github.com/s0m3on35/satellite-defense-tookit">View the full project on GitHub</a></p>
-  <img src="assets/terminal_animation.gif" alt="Demonstration Screenshot">
+  <div id="tsparticles"></div>
+
+  <header class="hero">
+    <div class="overlay">
+      <h1>Satellite Defense Toolkit</h1>
+      <p>Secure Against Attacks · AI & Monitoring · Forensics & Pen Tests</p>
+      <a href="https://github.com/s0m3on35/satellite-defense-toolkit" class="cta" target="_blank" rel="noopener noreferrer">
+        View on GitHub
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section class="features">
+      <h2>Toolkit Highlights</h2>
+      <div class="cards">
+        <article class="card">
+          <h3>Real-Time Defense</h3>
+          <p>Live GNSS spoofing detection, firmware integrity shields, and anomaly alerts.</p>
+        </article>
+        <article class="card">
+          <h3>AI Monitoring</h3>
+          <p>Telemetry analysis, Copilot chaining, and automated defense recommendations.</p>
+        </article>
+        <article class="card">
+          <h3>Red & Purple Teaming</h3>
+          <p>RF jammer location, implant persistence, live C2 dashboards, and adversary simulation.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="about">
+      <h2>About the Toolkit</h2>
+      <p>The Satellite Defense Toolkit is a professional-grade security framework built for aerospace, satellite, and ground station protection. It combines AI-driven monitoring, exploit simulation, and forensic automation to secure mission-critical space systems.</p>
+    </section>
+
+    <section class="metrics-section">
+      <h2>Toolkit Usage Metrics</h2>
+      <canvas id="metricsChart" width="600" height="300"></canvas>
+    </section>
+
+    <section class="callout">
+      <h2>Contribute or Collaborate</h2>
+      <p>Explore the open-source code, suggest improvements, or join the contributors.</p>
+      <a href="https://github.com/s0m3on35/satellite-defense-toolkit" class="cta secondary" target="_blank">
+        GitHub Repository
+      </a>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations created by D</p>
+  </footer>
+
+  <div id="copilot-chat">
+    <div id="copilot-chat-header">Copilot Chat</div>
+    <div id="copilot-chat-messages"></div>
+    <div id="copilot-chat-input">
+      <input type="text" placeholder="Ask Copilot..." />
+      <button>Send</button>
+    </div>
+  </div>
+
+  <script src="assets/script.js"></script>
 </body>
 </html>

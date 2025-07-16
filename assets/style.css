@@ -25,7 +25,7 @@ a:hover {
 }
 
 header.hero {
-  background-image: url("hero-bg.jpg");
+  background-image: url("assets/hero-bg.PNG");
   background-attachment: fixed;
   background-size: cover;
   background-position: center;

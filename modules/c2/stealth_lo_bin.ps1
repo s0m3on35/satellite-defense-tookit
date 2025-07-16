@@ -9,8 +9,6 @@
   4. Provides mshta, regsvr32, and EncodedCommand launchers
   5. Executes payload entirely in-memory
 
-.VERSION
-  Final | Military-Grade
 #>
 
 # ------------------ CONFIG ------------------

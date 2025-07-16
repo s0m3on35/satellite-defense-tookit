@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -6,12 +6,14 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta property="og:title" content="Satellite Defense Toolkit" />
   <meta property="og:description" content="Secure, Analyze, and Defend Satellites and Space Infrastructure." />
-  <meta property="og:image" content="assets/social_preview.jpg" />
+  <meta property="og:image" content="assets/hero-bg.PNG" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://s0m3on35.github.io/satellite-defense-toolkit/" />
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
   <title>Satellite Defense Toolkit</title>
   <link rel="stylesheet" href="assets/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3/tsparticles.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -51,6 +53,11 @@
       <p>The Satellite Defense Toolkit is a professional-grade security framework built for aerospace, satellite, and ground station protection. It combines AI-driven monitoring, exploit simulation, and forensic automation to secure mission-critical space systems.</p>
     </section>
 
+    <section class="metrics-section">
+      <h2>Toolkit Usage Metrics</h2>
+      <canvas id="metricsChart" width="600" height="300"></canvas>
+    </section>
+
     <section class="callout">
       <h2>Contribute or Collaborate</h2>
       <p>Explore the open-source code, suggest improvements, or join the contributors.</p>
@@ -64,7 +71,15 @@
     <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations created by D</p>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3/tsparticles.bundle.min.js"></script>
+  <div id="copilot-chat">
+    <div id="copilot-chat-header">Copilot Chat</div>
+    <div id="copilot-chat-messages"></div>
+    <div id="copilot-chat-input">
+      <input type="text" placeholder="Ask Copilot..." />
+      <button>Send</button>
+    </div>
+  </div>
+
   <script src="assets/script.js"></script>
 </body>
 </html>

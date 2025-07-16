@@ -23,31 +23,31 @@ The Satellite Defense Toolkit is a comprehensive suite for securing, analyzing, 
 
 ```bash
 satellite-defense-toolkit/
-├── config/                  # Configuration files (agents, targets)
-├── core/                    # Core utilities (audit, logging, security)
-├── docs/wiki/               # Markdown documentation and guides
-├── logs/                    # Execution logs and dashboard logs
-├── modules/                 # Categorized modules
-│   ├── ai/                  # AI-assisted classification and summaries
-│   ├── analysis/            # Telemetry, signal, and traffic analysis
-│   ├── attacks/             # Offensive and red team payloads
-│   ├── c2/                  # Command-and-control modules
-│   ├── copilot/             # Copilot automation and advisory modules
-│   ├── dashboard/           # Dashboard internal services
-│   ├── defense/             # Hardening and anomaly prevention
-│   ├── firmware/            # Firmware validation, implants, rollback
-│   ├── forensics/           # OTA, firmware, memory analysis
-│   ├── intel/               # Threat intel and enrichment
-│   ├── simulation/          # GNSS spoofing, telemetry simulation
-│   ├── stats/               # Metrics, timelines, heatmaps
-│   └── visualization/       # Graphs, maps, visual exports
-├── results/                 # Generated results, STIX, summaries
-├── webgui/                  # GUI and dashboard WebSocket interface
-├── satellite_defense_toolkit_gui.py   # Main GUI launcher
-├── satellite_defense_toolkit_cli.py   # Command-line interface
-├── run_toolkit.sh           # Main launcher script
-├── setup.py                 # Install and entrypoint definition
-└── README.md                # This file
+├── config/                      # Configuration files (agents, targets)
+├── core/                        # Core utilities (audit, logging, security)
+├── docs/wiki/                   # Markdown documentation and guides
+├── logs/                        # Execution logs and dashboard logs
+├── modules/                     # Categorized modules
+│   ├── ai/                      # AI-assisted classification and summaries
+│   ├── analysis/                # Telemetry, signal, and traffic analysis
+│   ├── attacks/                 # Offensive and red team payloads
+│   ├── c2/                      # Command-and-control modules
+│   ├── copilot/                 # Copilot automation and advisory modules
+│   ├── dashboard/               # Dashboard internal services
+│   ├── defense/                 # Hardening and anomaly prevention
+│   ├── firmware/                # Firmware validation, implants, rollback
+│   ├── forensics/               # OTA, firmware, memory analysis
+│   ├── intel/                   # Threat intel and enrichment
+│   ├── simulation/              # GNSS spoofing, telemetry simulation
+│   ├── stats/                   # Metrics, timelines, heatmaps
+│   └── visualization/           # Graphs, maps, visual exports
+├── results/                     # Generated results, STIX, summaries
+├── webgui/                      # GUI and dashboard WebSocket interface
+├── satellite_defense_toolkit_gui.py    # Main GUI launcher
+├── satellite_defense_toolkit_cli.py    # Command-line interface
+├── run_toolkit.sh              # Main launcher script
+├── setup.py                    # Install and entrypoint definition
+└── README.md                   # This file
 ```
 
 ---
@@ -60,7 +60,7 @@ satellite-defense-toolkit/
 python3 satellite_defense_toolkit_gui.py
 ```
 
-- Launches a full GUI with tabbed module browsing, execution logs, agent selector, and audit trail.
+Launches a full GUI with tabbed module browsing, execution logs, agent selector, and audit trail.
 
 ### CLI Mode
 
@@ -68,7 +68,7 @@ python3 satellite_defense_toolkit_gui.py
 python3 satellite_defense_toolkit_cli.py
 ```
 
-- Interactive CLI menu to run or chain modules, view logs, and select agents.
+Interactive CLI menu to run or chain modules, view logs, and select agents.
 
 ### Web Dashboard
 
@@ -76,7 +76,7 @@ python3 satellite_defense_toolkit_cli.py
 python3 webgui/dashboard_ws_server.py
 ```
 
-- Starts the WebSocket server to receive events from GUI/CLI and display real-time module execution, agent metrics, logs, and visual alerts.
+Starts the WebSocket server to receive events from GUI/CLI and display real-time module execution, agent metrics, logs, and visual alerts.
 
 ---
 
@@ -97,7 +97,7 @@ python3 setup.py install
 ## Requirements
 
 - Python 3.8+
-- Linux (preferred), macOS (partial support)
+- Linux (preferred), macOS (limited support)
 - Dependencies listed in `setup.py`, including:
   - `stix2`, `websocket-client`, `flask`, `flask-socketio`
   - `tensorflow`, `torch`, `transformers`, `psutil`
@@ -127,10 +127,6 @@ python3 setup.py install
 - All agents are listed in `config/agent_inventory.json`
 - Agents can be selected from the GUI or CLI when executing modules
 - Dashboard receives events with agent context for mapping
-
----
-
-/`
 
 ---
 

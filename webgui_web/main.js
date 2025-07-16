@@ -1,230 +1,147 @@
-const apiBase = "http://localhost:5000";
-let moduleList = [];
-let agentList = [];
-let executionChain = [];
+// === Onboarding Transition ===
+window.addEventListener("load", () => {
+  const onboarding = document.getElementById("onboarding");
+  const mainUI = document.getElementById("mainUI");
+  const skipBtn = document.getElementById("skipButton");
 
-// === INIT ===
-document.addEventListener("DOMContentLoaded", () => {
-  fetchModules();
-  fetchAgents();
-  setupWebSocket();
-  setupSearchFilter();
+  const showMainUI = () => {
+    onboarding.style.opacity = 0;
+    setTimeout(() => {
+      onboarding.style.display = "none";
+      mainUI.classList.remove("hidden");
+    }, 1000);
+  };
+
+  setTimeout(showMainUI, 5000); // auto-transition
+  skipBtn.addEventListener("click", showMainUI);
 });
 
-// === FETCH MODULES ===
-async function fetchModules() {
-  const res = await fetch(`${apiBase}/api/modules`);
-  const data = await res.json();
-  moduleList = data;
-  populateModules(data);
-  populateCategories(data);
-}
+// === Real-time Fetching & Execution Logic ===
+const moduleListEl = document.getElementById("moduleList");
+const chainListEl = document.getElementById("chainList");
+const consoleEl = document.getElementById("consoleOutput");
+const agentSelector = document.getElementById("agentSelector");
+const categoryFilter = document.getElementById("categoryFilter");
+const searchBox = document.getElementById("searchBox");
 
-// === FETCH AGENTS ===
-async function fetchAgents() {
-  const res = await fetch(`${apiBase}/api/agents`);
-  const data = await res.json();
-  agentList = data;
-  const selector = document.getElementById("agentSelector");
-  data.forEach(a => {
+let allModules = [];
+
+// === WebSocket Console Stream ===
+const socket = new WebSocket("ws://localhost:5000/socket.io/?EIO=4&transport=websocket");
+
+socket.onmessage = (event) => {
+  const data = event.data;
+  if (data.includes("console_output")) {
+    const payloadMatch = data.match(/"line":"(.*?)"}/);
+    if (payloadMatch) {
+      const line = payloadMatch[1].replace(/\\"/g, '"');
+      consoleEl.textContent += line + "\n";
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+  }
+};
+
+// === Load Agents ===
+async function loadAgents() {
+  const res = await fetch("/api/agents");
+  const agents = await res.json();
+  agentSelector.innerHTML = "";
+  agents.forEach(agent => {
     const opt = document.createElement("option");
-    opt.value = a.id;
-    opt.textContent = a.id;
-    selector.appendChild(opt);
+    opt.value = agent.id;
+    opt.textContent = agent.name;
+    agentSelector.appendChild(opt);
   });
 }
 
-// === POPULATE MODULES ===
-function populateModules(data) {
-  const ul = document.getElementById("moduleList");
-  ul.innerHTML = "";
-  data.forEach(mod => {
-    const li = document.createElement("li");
-    li.textContent = mod.name;
-    li.draggable = true;
-    li.dataset.file = mod.file;
-    li.dataset.category = mod.category;
-    li.addEventListener("dragstart", e => {
+// === Load Modules ===
+async function loadModules() {
+  const res = await fetch("/api/modules");
+  const modules = await res.json();
+  allModules = modules;
+  populateModuleList(modules);
+  populateCategoryFilter(modules);
+}
+
+function populateModuleList(modules) {
+  moduleListEl.innerHTML = "";
+  modules.forEach(mod => {
+    const item = document.createElement("li");
+    item.textContent = mod.name;
+    item.draggable = true;
+    item.classList.add("module-item");
+    item.dataset.file = mod.file;
+    item.dataset.category = mod.category;
+    item.addEventListener("dragstart", e => {
       e.dataTransfer.setData("text/plain", JSON.stringify(mod));
     });
-    ul.appendChild(li);
+    moduleListEl.appendChild(item);
   });
 }
 
-// === POPULATE CATEGORIES ===
-function populateCategories(data) {
-  const unique = [...new Set(data.map(m => m.category))];
-  const sel = document.getElementById("categoryFilter");
-  unique.forEach(cat => {
+function populateCategoryFilter(modules) {
+  const categories = new Set(modules.map(m => m.category));
+  categoryFilter.innerHTML = `<option value="All">All</option>`;
+  categories.forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat;
     opt.textContent = cat;
-    sel.appendChild(opt);
-  });
-  sel.addEventListener("change", () => {
-    filterModules();
+    categoryFilter.appendChild(opt);
   });
 }
 
-// === FILTER MODULES ===
-function setupSearchFilter() {
-  document.getElementById("searchBox").addEventListener("input", filterModules);
-}
-
-function filterModules() {
-  const q = document.getElementById("searchBox").value.toLowerCase();
-  const c = document.getElementById("categoryFilter").value;
-  const list = document.getElementById("moduleList").children;
-  for (let item of list) {
-    const match = item.textContent.toLowerCase().includes(q);
-    const categoryMatch = c === "All" || item.dataset.category === c;
-    item.style.display = match && categoryMatch ? "" : "none";
-  }
-}
-
-// === DROP ZONE ===
-document.getElementById("chainList").addEventListener("dragover", e => {
-  e.preventDefault();
+categoryFilter.addEventListener("change", () => {
+  const selected = categoryFilter.value;
+  const filtered = selected === "All" ? allModules : allModules.filter(m => m.category === selected);
+  populateModuleList(filtered);
 });
-document.getElementById("chainList").addEventListener("drop", e => {
+
+searchBox.addEventListener("input", () => {
+  const text = searchBox.value.toLowerCase();
+  const filtered = allModules.filter(m => m.name.toLowerCase().includes(text));
+  populateModuleList(filtered);
+});
+
+// === Chain Actions ===
+chainListEl.addEventListener("dragover", e => e.preventDefault());
+chainListEl.addEventListener("drop", e => {
   e.preventDefault();
   const mod = JSON.parse(e.dataTransfer.getData("text/plain"));
-  executionChain.push(mod);
-  const li = document.createElement("li");
-  li.textContent = mod.name;
-  li.dataset.file = mod.file;
-  document.getElementById("chainList").appendChild(li);
-  updateCopilotSuggestions();
+  const item = document.createElement("li");
+  item.textContent = mod.name;
+  item.dataset.file = mod.file;
+  chainListEl.appendChild(item);
 });
 
-// === EXECUTION ===
-async function runChain() {
-  if (executionChain.length === 0) return;
-  await fetch(`${apiBase}/api/chain`, {
+function runChain() {
+  const chain = [...chainListEl.children].map(el => ({
+    name: el.textContent,
+    file: el.dataset.file
+  }));
+  fetch("/api/chain", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chain: executionChain })
+    body: JSON.stringify({ chain })
   });
-}
-
-async function exportChain() {
-  const zip = new JSZip();
-  const chainMeta = {
-    exported: new Date().toISOString(),
-    agent: document.getElementById("agentSelector").value,
-    modules: executionChain
-  };
-  zip.file("chain_metadata.json", JSON.stringify(chainMeta, null, 2));
-  const blob = await zip.generateAsync({ type: "blob" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "chain_export.zip";
-  link.click();
 }
 
 function clearChain() {
-  executionChain = [];
-  document.getElementById("chainList").innerHTML = "";
-  updateCopilotSuggestions();
+  chainListEl.innerHTML = "";
 }
 
-// === WEBSOCKET ===
-function setupWebSocket() {
-  const socket = new WebSocket("ws://localhost:5000/socket.io/?EIO=4&transport=websocket");
-
-  socket.onopen = () => logToConsole("[WebSocket] Connected.");
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data.split("42")[1]);
-      if (data[0] === "console_output") {
-        logToConsole(data[1].line);
-        updateMetricsChart(data[1].line);
-      }
-    } catch {}
-  };
+function exportChain() {
+  const chain = [...chainListEl.children].map(el => ({
+    name: el.textContent,
+    file: el.dataset.file
+  }));
+  const blob = new Blob([JSON.stringify(chain, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "module_chain.json";
+  link.click();
 }
 
-// === CONSOLE ===
-function logToConsole(msg) {
-  const consoleEl = document.getElementById("consoleOutput");
-  consoleEl.textContent += msg + "\n";
-  consoleEl.scrollTop = consoleEl.scrollHeight;
-}
-
-// === COPILOT ===
-function updateCopilotSuggestions() {
-  const copilot = document.getElementById("copilotList");
-  copilot.innerHTML = "";
-  const last = executionChain[executionChain.length - 1];
-  if (!last) return;
-
-  const keywords = {
-    "firmware": ["Firmware Timeline Builder", "Firmware Persistent Implant"],
-    "gnss": ["GNSS Spoofer", "GNSS Spoof Guard"],
-    "ota": ["OTA Firmware Injector", "OTA Packet Analyzer"],
-    "telemetry": ["Telemetry Guardian", "Threat Classifier"],
-    "c2": ["SATCOM C2 Hijacker", "Payload Launcher"]
-  };
-
-  for (let k in keywords) {
-    if (last.name.toLowerCase().includes(k)) {
-      keywords[k].forEach(s => {
-        const li = document.createElement("li");
-        li.textContent = s;
-        copilot.appendChild(li);
-      });
-    }
-  }
-}
-
-// === AUDIT VIEWER ===
-async function loadAuditTrail() {
-  const res = await fetch("../logs/audit_trail.jsonl");
-  const text = await res.text();
-  const audit = document.getElementById("auditViewer");
-  audit.innerHTML = "";
-  text.trim().split("\n").forEach(line => {
-    try {
-      const data = JSON.parse(line);
-      const li = document.createElement("li");
-      li.textContent = `[${new Date(data.timestamp * 1000).toISOString()}] ${data.module} (${data.agent})`;
-      audit.appendChild(li);
-    } catch {}
-  });
-}
-loadAuditTrail();
-
-// === METRICS ===
-const ctx = document.getElementById("metricsChart").getContext("2d");
-const chart = new Chart(ctx, {
-  type: "bar",
-  data: {
-    labels: [],
-    datasets: [{
-      label: "Module Runs",
-      data: [],
-      backgroundColor: "lime"
-    }]
-  },
-  options: {
-    scales: {
-      y: {
-        beginAtZero: true
-      }
-    }
-  }
-});
-
-function updateMetricsChart(line) {
-  const match = line.match(/\[\*\] Running (.+)/);
-  if (!match) return;
-  const name = match[1];
-  const i = chart.data.labels.indexOf(name);
-  if (i >= 0) {
-    chart.data.datasets[0].data[i]++;
-  } else {
-    chart.data.labels.push(name);
-    chart.data.datasets[0].data.push(1);
-  }
-  chart.update();
-}
+// === Init ===
+loadModules();
+loadAgents();

@@ -1,19 +1,88 @@
-body {
+/* General Reset */
+* {
   margin: 0;
-  font-family: 'Courier New', Courier, monospace;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Courier New", monospace;
   background-color: black;
   color: lime;
+  overflow: hidden;
 }
 
-.header {
-  background-color: #111;
-  padding: 10px 20px;
-  border-bottom: 2px solid #444;
+/* Onboarding Splash */
+#onboarding {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 1s ease;
 }
 
-.header h1 {
-  margin: 0;
-  font-size: 26px;
+#onboarding img {
+  max-width: 800px;
+  width: 90%;
+  margin-bottom: 40px;
+  animation: zoomFade 4s ease-in-out infinite alternate;
+}
+
+#onboarding h1 {
+  font-size: 2.5rem;
+  color: lime;
+  margin-bottom: 20px;
+}
+
+#onboarding p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  color: #0f0;
+}
+
+#onboarding button {
+  font-size: 1.1rem;
+  background: lime;
+  color: black;
+  border: none;
+  padding: 10px 30px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+@keyframes zoomFade {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+/* Main UI */
+.hidden {
+  display: none;
+}
+
+main {
+  display: flex;
+  height: calc(100vh - 140px);
+}
+
+header.header {
+  background: #111;
+  padding: 20px;
+  border-bottom: 1px solid #333;
+  color: lime;
 }
 
 .toolbar {
@@ -23,110 +92,65 @@ body {
   margin-top: 10px;
 }
 
+.toolbar label,
 .toolbar select,
 .toolbar input {
-  padding: 5px;
-  font-size: 14px;
-  background-color: #222;
+  background: black;
   color: lime;
   border: 1px solid #444;
+  padding: 5px;
 }
 
-.main-layout {
-  display: flex;
-  justify-content: space-between;
+/* Module & Chain */
+.module-section,
+.chain-section {
+  flex: 1;
   padding: 20px;
+  border-right: 1px solid #222;
+  overflow-y: auto;
 }
 
-.module-section, .chain-section {
-  width: 48%;
-}
-
-.module-section h2,
-.chain-section h2,
-.console-section h3 {
-  margin-bottom: 10px;
-  color: lime;
+.chain-section {
+  border-right: none;
 }
 
 .scrollable {
-  background-color: #0a0a0a;
-  border: 1px solid #333;
   max-height: 400px;
   overflow-y: auto;
+  background: #111;
   padding: 10px;
-  font-size: 14px;
-  color: lime;
-}
-
-.drop-zone {
-  border: 2px dashed #555;
-  padding: 10px;
-  background-color: #111;
+  border: 1px solid #333;
 }
 
 .actions {
-  margin-top: 10px;
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
 }
 
 .actions button {
-  padding: 6px 12px;
-  background-color: #222;
-  border: 1px solid #555;
-  color: lime;
+  background: lime;
+  color: black;
+  border: none;
+  padding: 10px 15px;
   cursor: pointer;
-  margin-right: 10px;
+  font-weight: bold;
+  border-radius: 4px;
 }
 
-.actions button:hover {
-  background-color: #333;
-}
-
-progress {
-  width: 100%;
-  height: 20px;
-  margin-top: 10px;
-}
-
+/* Console */
 .console-section {
-  margin: 20px;
+  background: #111;
+  padding: 15px;
+  border-top: 1px solid #333;
 }
 
-/* Hero Banner Styles */
-.hero-banner {
-  position: relative;
-  width: 100%;
-  max-height: 300px;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-.hero-banner img {
-  width: 100%;
-  object-fit: cover;
-  opacity: 0.85;
-  height: auto;
-}
-
-.banner-text {
-  position: absolute;
-  top: 30%;
-  left: 50%;
-  transform: translate(-50%, -30%);
+.console-section pre {
+  background: black;
   color: lime;
-  text-align: center;
-  text-shadow: 0 0 8px black;
-  background-color: rgba(0, 0, 0, 0.4);
-  padding: 10px 20px;
-  border-radius: 8px;
-}
-
-.banner-text h2 {
-  font-size: 28px;
-  margin: 0;
-}
-
-.banner-text p {
-  font-size: 16px;
-  margin-top: 5px;
+  padding: 10px;
+  font-size: 0.95rem;
+  height: 200px;
+  overflow-y: auto;
+  border: 1px solid #333;
 }

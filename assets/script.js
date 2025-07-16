@@ -1,5 +1,3 @@
-// File: assets/script.js
-
 document.addEventListener("DOMContentLoaded", () => {
   const animatedElements = document.querySelectorAll(".card, .about, header .overlay, h2, footer");
 
@@ -15,10 +13,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   animatedElements.forEach(el => {
+    el.style.animationPlayState = "paused";
     observer.observe(el);
   });
 
-  // Smooth scroll for internal links (optional)
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener("click", function (e) {
       e.preventDefault();

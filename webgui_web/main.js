@@ -1,178 +1,152 @@
-// === DOM elements ===
-const moduleListEl = document.getElementById("moduleList");
-const chainListEl = document.getElementById("chainList");
-const progressBar = document.getElementById("progressBar");
-const consoleOutput = document.getElementById("consoleOutput");
-const categoryFilter = document.getElementById("categoryFilter");
+// File: /webgui_web/main.js
+
+const moduleList = document.getElementById("moduleList");
 const agentSelector = document.getElementById("agentSelector");
+const categoryFilter = document.getElementById("categoryFilter");
 const searchBox = document.getElementById("searchBox");
+const chainList = document.getElementById("chainList");
+const consoleOutput = document.getElementById("consoleOutput");
+const progressBar = document.getElementById("progressBar");
 
-// === State ===
 let allModules = [];
-let chainModules = [];
+let chain = [];
 
-// === Init ===
-document.addEventListener("DOMContentLoaded", () => {
-  fetchAgents();
-  fetchModules();
-  setupSearchFilter();
-  setupDragAndDrop();
-});
-
-// === Fetch agents from backend ===
-function fetchAgents() {
-  fetch("http://localhost:5000/api/agents")
-    .then(res => res.json())
-    .then(data => {
-      data.forEach(agent => {
-        const opt = document.createElement("option");
-        opt.value = agent.id || agent;
-        opt.textContent = agent.id || agent;
-        agentSelector.appendChild(opt);
-      });
-    })
-    .catch(() => {
-      const fallback = ["default"];
-      fallback.forEach(agent => {
-        const opt = document.createElement("option");
-        opt.value = agent;
-        opt.textContent = agent;
-        agentSelector.appendChild(opt);
-      });
-    });
+// === Load modules from backend ===
+async function loadModules() {
+  const res = await fetch("/api/modules");
+  const modules = await res.json();
+  allModules = modules;
+  populateCategories(modules);
+  renderModules(modules);
 }
 
-// === Fetch modules from backend ===
-function fetchModules() {
-  fetch("http://localhost:5000/api/modules")
-    .then(res => res.json())
-    .then(data => {
-      allModules = data;
-      updateCategoryFilter();
-      renderModuleList();
-    });
+// === Load agents ===
+async function loadAgents() {
+  const res = await fetch("/api/agents");
+  const agents = await res.json();
+  agentSelector.innerHTML = "";
+  agents.forEach(agent => {
+    const option = document.createElement("option");
+    option.value = agent.id;
+    option.textContent = agent.id;
+    agentSelector.appendChild(option);
+  });
 }
 
 // === Populate category dropdown ===
-function updateCategoryFilter() {
-  const unique = new Set(allModules.map(m => m.category));
-  unique.forEach(cat => {
+function populateCategories(modules) {
+  const categories = new Set(modules.map(m => m.category));
+  categoryFilter.innerHTML = `<option value="All">All</option>`;
+  categories.forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat;
     opt.textContent = cat;
     categoryFilter.appendChild(opt);
   });
-  categoryFilter.addEventListener("change", renderModuleList);
 }
 
-// === Search filter setup ===
-function setupSearchFilter() {
-  searchBox.addEventListener("input", renderModuleList);
-}
-
-// === Filter and render modules ===
-function renderModuleList() {
-  const query = searchBox.value.toLowerCase();
-  const selectedCat = categoryFilter.value;
-
-  moduleListEl.innerHTML = "";
-
-  allModules
-    .filter(m =>
-      (selectedCat === "All" || m.category === selectedCat) &&
-      m.name.toLowerCase().includes(query)
-    )
-    .forEach(mod => {
+// === Render module list based on filter/search ===
+function renderModules(modules) {
+  const search = searchBox.value.toLowerCase();
+  const filter = categoryFilter.value;
+  moduleList.innerHTML = "";
+  modules.forEach(mod => {
+    if ((filter === "All" || mod.category === filter) && mod.name.toLowerCase().includes(search)) {
       const li = document.createElement("li");
-      li.textContent = mod.name;
-      li.draggable = true;
-      li.dataset.name = mod.name;
+      li.textContent = `${mod.name} (${mod.category})`;
+      li.classList.add("module-item");
       li.dataset.file = mod.file;
+      li.draggable = true;
+
       li.addEventListener("dragstart", e => {
-        e.dataTransfer.setData("text/plain", JSON.stringify(mod));
+        e.dataTransfer.setData("module", JSON.stringify(mod));
       });
-      moduleListEl.appendChild(li);
-    });
-}
 
-// === Drag-and-drop setup ===
-function setupDragAndDrop() {
-  chainListEl.addEventListener("dragover", e => e.preventDefault());
-
-  chainListEl.addEventListener("drop", e => {
-    e.preventDefault();
-    const mod = JSON.parse(e.dataTransfer.getData("text/plain"));
-    const li = document.createElement("li");
-    li.textContent = mod.name;
-    li.dataset.name = mod.name;
-    li.dataset.file = mod.file;
-    chainListEl.appendChild(li);
-    chainModules.push(mod);
+      li.addEventListener("dblclick", () => runModule(mod));
+      moduleList.appendChild(li);
+    }
   });
 }
 
-// === Run execution chain live ===
-function runChain() {
-  const sequence = Array.from(chainListEl.querySelectorAll("li")).map(li => ({
-    name: li.dataset.name,
-    file: li.dataset.file
-  }));
+// === Drag/drop to chain ===
+chainList.addEventListener("dragover", e => e.preventDefault());
+chainList.addEventListener("drop", e => {
+  e.preventDefault();
+  const mod = JSON.parse(e.dataTransfer.getData("module"));
+  chain.push(mod);
+  const li = document.createElement("li");
+  li.textContent = mod.name;
+  li.classList.add("chain-item");
+  li.dataset.file = mod.file;
+  chainList.appendChild(li);
+});
 
-  if (!sequence.length) {
-    logOutput("No modules selected.");
-    return;
-  }
-
+// === Run single module ===
+function runModule(mod) {
+  printToConsole(`> Running: ${mod.name}`);
   progressBar.value = 0;
-  logOutput("Executing module chain...");
-
-  fetch("http://localhost:5000/api/chain", {
+  fetch("/api/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chain: sequence })
-  })
-    .then(res => res.json())
-    .then(results => {
-      results.forEach(entry => {
-        if (entry.output) {
-          logOutput(`[â] ${entry.module}: ${entry.output}`);
-        } else {
-          logOutput(`[â] ${entry.module}: ${entry.error}`);
-        }
-      });
-      progressBar.value = 100;
-    })
-    .catch(err => {
-      logOutput("Execution error: " + err.message);
-    });
+    body: JSON.stringify({ file: mod.file })
+  });
 }
 
-// === Clear chain list ===
-function clearChain() {
-  chainModules = [];
-  chainListEl.innerHTML = "";
+// === Run full chain ===
+function runChain() {
+  if (!chain.length) return;
+  printToConsole("> Executing chain...");
   progressBar.value = 0;
-  logOutput("Chain cleared.");
+  fetch("/api/chain", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chain: chain.map(mod => ({ file: mod.file })) })
+  });
 }
 
 // === Export chain to JSON ===
 function exportChain() {
-  const sequence = Array.from(chainListEl.querySelectorAll("li")).map(li => ({
-    name: li.dataset.name,
-    file: li.dataset.file
-  }));
-  const blob = new Blob([JSON.stringify(sequence, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(chain, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "execution_chain.json";
+  a.download = "module_chain.json";
   a.click();
   URL.revokeObjectURL(url);
 }
 
-// === Log output to terminal area ===
-function logOutput(msg) {
-  const ts = new Date().toLocaleTimeString();
-  consoleOutput.textContent += `[${ts}] ${msg}\n`;
-  consoleOutput.scrollTop = consoleOutput.scrollHeight;
+// === Clear chain UI + array ===
+function clearChain() {
+  chain = [];
+  chainList.innerHTML = "";
+  printToConsole("> Cleared execution chain.");
 }
+
+// === WebSocket console output ===
+const ws = new WebSocket(`ws://${location.hostname}:5000/ws`);
+ws.onmessage = event => {
+  const { line } = JSON.parse(event.data);
+  printToConsole(line);
+};
+ws.onopen = () => printToConsole("[✓] WebSocket connected");
+ws.onerror = () => printToConsole("[x] WebSocket connection failed");
+
+// === Print to console output area ===
+function printToConsole(msg) {
+  const span = document.createElement("div");
+  span.textContent = msg;
+  consoleOutput.appendChild(span);
+  consoleOutput.scrollTop = consoleOutput.scrollHeight;
+  progressBar.value = Math.min(progressBar.value + 5, 100);
+}
+
+// === Bind input events ===
+searchBox.addEventListener("input", () => renderModules(allModules));
+categoryFilter.addEventListener("change", () => renderModules(allModules));
+
+// === Init ===
+window.onload = () => {
+  loadModules();
+  loadAgents();
+  printToConsole("> GUI ready.");
+};

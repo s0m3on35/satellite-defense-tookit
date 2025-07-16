@@ -1,169 +1,192 @@
-/* Base Reset */
-* {
+/* === Base Layout === */
+body {
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body {
-  height: 100%;
   font-family: 'Courier New', Courier, monospace;
   background-color: #000;
   color: #00ff00;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
-/* Header */
-.sdt-header {
-  background: #111;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid #222;
-}
-
-.sdt-header-content {
+header.header {
+  background-color: #111;
+  padding: 10px 20px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #0f0;
 }
 
-.sdt-title {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #00ff00;
-}
-
-.sdt-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.2rem;
-  margin-top: 1rem;
-}
-
-.sdt-control-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.sdt-control-group label {
-  font-size: 0.9rem;
-  color: #39ff14;
-  margin-bottom: 4px;
-}
-
-.sdt-control-group select,
-.sdt-control-group input {
-  padding: 6px 10px;
-  background: #0d0d0d;
-  color: #00ff00;
-  border: 1px solid #39ff14;
-  outline: none;
-}
-
-/* Layout */
-.sdt-main {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  padding: 1.5rem;
-  flex-grow: 1;
-  overflow: hidden;
-}
-
-/* Panels */
-.sdt-module-panel,
-.sdt-chain-panel {
-  display: flex;
-  flex-direction: column;
-  background: #0e0e0e;
-  border: 1px solid #222;
-  padding: 1rem;
-  overflow: hidden;
-}
-
-.sdt-module-panel h2,
-.sdt-chain-panel h2 {
-  color: #39ff14;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
-}
-
-/* Scrollable Lists */
-.scrollable {
-  overflow-y: auto;
-  max-height: 300px;
-}
-
-.sdt-list,
-.sdt-chain {
-  list-style: none;
-  padding: 0;
+header h1 {
   margin: 0;
-  border: 1px dashed #333;
-  padding: 8px;
-  background: #000;
+  font-size: 24px;
+  color: #0f0;
 }
 
-.sdt-list li,
-.sdt-chain li {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  padding: 6px 10px;
-  margin-bottom: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.sdt-list li:hover,
-.sdt-chain li:hover {
-  background: #2a2a2a;
-  color: #39ff14;
-  border-color: #39ff14;
-}
-
-/* Action Buttons */
-.sdt-actions {
+.toolbar {
   display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
+  align-items: center;
+  gap: 10px;
+}
+
+select, input[type="text"], textarea {
+  background-color: #111;
+  color: #0f0;
+  border: 1px solid #0f0;
+  padding: 5px;
+  font-family: inherit;
+  font-size: 14px;
 }
 
 button {
-  background: #0d0d0d;
-  color: #00ff00;
-  border: 1px solid #39ff14;
-  padding: 8px 16px;
-  font-weight: bold;
+  background-color: #111;
+  color: #0f0;
+  border: 1px solid #0f0;
+  padding: 5px 10px;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
 button:hover {
-  background: #1f1f1f;
+  background-color: #0f0;
+  color: #000;
 }
 
-/* Progress Bar */
-progress {
-  width: 100%;
-  height: 18px;
-  margin-top: 1rem;
-  background: #000;
-  border: 1px solid #39ff14;
-  accent-color: #00ff00;
+/* === Main Grid Layout === */
+main.dashboard-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  flex: 1;
+  background-color: #000;
 }
 
-/* Console */
-.sdt-console {
-  background: #111;
-  padding: 1rem;
-  border-top: 1px solid #222;
+/* === Widgets === */
+.module-section, .chain-section, .metrics-section, .map-section,
+.copilot-section, .timeline-section, .audit-section {
+  background-color: #111;
+  border: 1px solid #0f0;
+  padding: 15px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.module-section h2,
+.chain-section h2,
+.metrics-section h2,
+.map-section h2,
+.copilot-section h2,
+.timeline-section h2,
+.audit-section h2 {
+  margin-top: 0;
+  font-size: 18px;
+  border-bottom: 1px solid #0f0;
+  padding-bottom: 5px;
+}
+
+/* === Lists and Drop Areas === */
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.module-list li,
+.drop-zone li {
+  padding: 6px;
+  border-bottom: 1px solid #0f0;
+  cursor: grab;
+}
+
+.drop-zone {
+  min-height: 150px;
+  border: 2px dashed #0f0;
+  padding: 10px;
+}
+
+.scrollable {
+  overflow-y: auto;
+  max-height: 250px;
+  background-color: #000;
+  padding: 10px;
+  font-size: 13px;
+}
+
+/* === Console Output === */
+.console-section {
+  background-color: #111;
+  border-top: 2px solid #0f0;
+  padding: 10px 20px;
 }
 
 #consoleOutput {
-  background: #000;
-  color: #00ff00;
-  font-size: 0.95rem;
+  background-color: #000;
+  color: #0f0;
   padding: 10px;
-  height: 180px;
+  font-family: 'Courier New', Courier, monospace;
+  max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #333;
+  border: 1px solid #0f0;
+}
+
+/* === Copilot Panel === */
+.copilot-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#copilotOutput {
+  background-color: #000;
+  color: #0f0;
+  height: 100px;
+  border: 1px solid #0f0;
+  padding: 5px;
+  overflow-y: auto;
+}
+
+#copilotInput {
+  width: 100%;
+  resize: none;
+}
+
+/* === Audit Log === */
+.audit-log {
+  font-size: 12px;
+  background-color: #000;
+  color: #0f0;
+  border: 1px solid #0f0;
+  padding: 10px;
+  overflow-y: auto;
+  height: 150px;
+}
+
+/* === Map Widget === */
+.map-container {
+  background-color: #000;
+  border: 1px solid #0f0;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f0;
+}
+
+/* === Timeline Widget === */
+.timeline-widget {
+  background-color: #000;
+  border: 1px solid #0f0;
+  height: 100px;
+  color: #0f0;
+  padding: 5px;
+}
+
+/* === Graph Canvas === */
+#metricsGraph {
+  width: 100%;
+  border: 1px solid #0f0;
+  background-color: #000;
 }

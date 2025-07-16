@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Satellite Defense Toolkit - Web GUI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="sdt-header" role="banner">
+    <div class="sdt-header-content">
+      <h1 class="sdt-title">Satellite Defense Toolkit</h1>
+      <div class="sdt-controls">
+        <div class="sdt-control-group">
+          <label for="agentSelector">Agent</label>
+          <select id="agentSelector" name="agentSelector" aria-label="Agent selector"></select>
+        </div>
+
+        <div class="sdt-control-group">
+          <label for="categoryFilter">Category</label>
+          <select id="categoryFilter" name="categoryFilter" aria-label="Category filter">
+            <option value="All">All</option>
+          </select>
+        </div>
+
+        <div class="sdt-control-group">
+          <label for="searchBox">Search</label>
+          <input type="text" id="searchBox" placeholder="Search modules..." autocomplete="off" />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="sdt-main" role="main">
+    <section class="sdt-module-panel" aria-labelledby="available-modules">
+      <h2 id="available-modules">Available Modules</h2>
+      <ul id="moduleList" class="sdt-list scrollable" aria-label="Module list"></ul>
+    </section>
+
+    <section class="sdt-chain-panel" aria-labelledby="execution-chain">
+      <h2 id="execution-chain">Execution Chain</h2>
+      <ul id="chainList" class="sdt-chain drop-zone scrollable" aria-label="Execution chain list"></ul>
+      <div class="sdt-actions">
+        <button type="button" onclick="runChain()">Run Chain</button>
+        <button type="button" onclick="clearChain()">Clear</button>
+        <button type="button" onclick="exportChain()">Export</button>
+      </div>
+      <progress id="progressBar" value="0" max="100" aria-label="Progress bar"></progress>
+    </section>
+  </main>
+
+  <section class="sdt-console" role="region" aria-labelledby="console-output">
+    <h3 id="console-output">Console Output</h3>
+    <pre id="consoleOutput" class="scrollable" tabindex="0"></pre>
+  </section>
+
+  <script src="main.js" type="module"></script>
+</body>
+</html>

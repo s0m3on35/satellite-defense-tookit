@@ -183,7 +183,8 @@ footer {
   transform: translateY(20px);
 }
 
-#particles-js {
+/* Particles background */
+#tsparticles {
   position: fixed;
   top: 0;
   left: 0;
@@ -192,6 +193,7 @@ footer {
   height: 100%;
 }
 
+/* Copilot Chat Widget */
 #copilot-chat {
   position: fixed;
   bottom: 25px;
@@ -249,6 +251,17 @@ footer {
   background: #159d85;
 }
 
+/* Metrics Chart */
+#metricsChart {
+  display: block;
+  max-width: 800px;
+  margin: 60px auto;
+  background: #1a2233;
+  border-radius: 12px;
+  padding: 30px;
+}
+
+/* Animations */
 @keyframes fadeInUp {
   to {
     opacity: 1;

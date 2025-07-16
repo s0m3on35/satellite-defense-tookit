@@ -8,13 +8,17 @@
   <meta property="og:description" content="Secure, Analyze, and Defend Satellites and Space Infrastructure." />
   <meta property="og:image" content="assets/social_preview.jpg" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://s0m3on35.github.io/satellite-defense-toolkit/" />
+  <meta property="og:url" content="https://s0m3on35.github.io/satellite-defense-toolkit/landing/" />
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
   <title>Satellite Defense Toolkit</title>
   <link rel="stylesheet" href="assets/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3.0.1/tsparticles.bundle.min.js"></script>
 </head>
 
 <body>
+  <div id="tsparticles"></div>
+
   <header class="hero">
     <div class="overlay">
       <h1>Satellite Defense Toolkit</h1>
@@ -44,6 +48,11 @@
       </div>
     </section>
 
+    <section class="metrics">
+      <h2>Telemetry & Alerts</h2>
+      <canvas id="metricsChart"></canvas>
+    </section>
+
     <section class="about">
       <h2>About the Toolkit</h2>
       <p>The Satellite Defense Toolkit is a professional-grade security framework built for aerospace, satellite, and ground station protection. It combines AI-driven monitoring, exploit simulation, and forensic automation to secure mission-critical space systems.</p>
@@ -57,6 +66,12 @@
       </a>
     </section>
   </main>
+
+  <div id="copilot-panel">
+    <div class="copilot-header">Copilot AI</div>
+    <div class="copilot-log" id="copilot-log"></div>
+    <input type="text" id="copilot-input" placeholder="Ask the toolkit..." />
+  </div>
 
   <footer>
     <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations by (D)</p>

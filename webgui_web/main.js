@@ -1,138 +1,230 @@
-// === Global State ===
-let modules = [];
-let agents = [];
-let selectedAgent = null;
-let chainList = [];
+const apiBase = "http://localhost:5000";
+let moduleList = [];
+let agentList = [];
+let executionChain = [];
 
-// === Fetch Agents and Modules ===
+// === INIT ===
+document.addEventListener("DOMContentLoaded", () => {
+  fetchModules();
+  fetchAgents();
+  setupWebSocket();
+  setupSearchFilter();
+});
+
+// === FETCH MODULES ===
+async function fetchModules() {
+  const res = await fetch(`${apiBase}/api/modules`);
+  const data = await res.json();
+  moduleList = data;
+  populateModules(data);
+  populateCategories(data);
+}
+
+// === FETCH AGENTS ===
 async function fetchAgents() {
-  const res = await fetch('/api/agents');
-  agents = await res.json();
-  const selector = document.getElementById('agentSelector');
-  agents.forEach(agent => {
-    const opt = document.createElement('option');
-    opt.value = agent.id || agent;
-    opt.textContent = agent.id || agent;
+  const res = await fetch(`${apiBase}/api/agents`);
+  const data = await res.json();
+  agentList = data;
+  const selector = document.getElementById("agentSelector");
+  data.forEach(a => {
+    const opt = document.createElement("option");
+    opt.value = a.id;
+    opt.textContent = a.id;
     selector.appendChild(opt);
   });
-  selector.onchange = () => selectedAgent = selector.value;
-  selectedAgent = selector.value;
 }
 
-async function fetchModules() {
-  const res = await fetch('/api/modules');
-  modules = await res.json();
-  populateModuleList();
-  populateCategoryFilter();
-}
-
-// === Populate Module List ===
-function populateModuleList() {
-  const list = document.getElementById('moduleList');
-  list.innerHTML = '';
-  const category = document.getElementById('categoryFilter').value;
-  const search = document.getElementById('searchBox').value.toLowerCase();
-
-  modules
-    .filter(m => (category === 'All' || m.category === category))
-    .filter(m => m.name.toLowerCase().includes(search))
-    .forEach(m => {
-      const li = document.createElement('li');
-      li.textContent = `${m.name} (${m.category})`;
-      li.draggable = true;
-      li.ondragstart = e => {
-        e.dataTransfer.setData('text/plain', JSON.stringify(m));
-      };
-      list.appendChild(li);
+// === POPULATE MODULES ===
+function populateModules(data) {
+  const ul = document.getElementById("moduleList");
+  ul.innerHTML = "";
+  data.forEach(mod => {
+    const li = document.createElement("li");
+    li.textContent = mod.name;
+    li.draggable = true;
+    li.dataset.file = mod.file;
+    li.dataset.category = mod.category;
+    li.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text/plain", JSON.stringify(mod));
     });
-}
-
-// === Populate Categories ===
-function populateCategoryFilter() {
-  const catSet = new Set(modules.map(m => m.category));
-  const filter = document.getElementById('categoryFilter');
-  catSet.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = c;
-    filter.appendChild(opt);
+    ul.appendChild(li);
   });
-  filter.onchange = populateModuleList;
-  document.getElementById('searchBox').oninput = populateModuleList;
 }
 
-// === Drag & Drop Chain Handling ===
-const chainUl = document.getElementById('chainList');
-chainUl.ondragover = e => e.preventDefault();
-chainUl.ondrop = e => {
+// === POPULATE CATEGORIES ===
+function populateCategories(data) {
+  const unique = [...new Set(data.map(m => m.category))];
+  const sel = document.getElementById("categoryFilter");
+  unique.forEach(cat => {
+    const opt = document.createElement("option");
+    opt.value = cat;
+    opt.textContent = cat;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener("change", () => {
+    filterModules();
+  });
+}
+
+// === FILTER MODULES ===
+function setupSearchFilter() {
+  document.getElementById("searchBox").addEventListener("input", filterModules);
+}
+
+function filterModules() {
+  const q = document.getElementById("searchBox").value.toLowerCase();
+  const c = document.getElementById("categoryFilter").value;
+  const list = document.getElementById("moduleList").children;
+  for (let item of list) {
+    const match = item.textContent.toLowerCase().includes(q);
+    const categoryMatch = c === "All" || item.dataset.category === c;
+    item.style.display = match && categoryMatch ? "" : "none";
+  }
+}
+
+// === DROP ZONE ===
+document.getElementById("chainList").addEventListener("dragover", e => {
   e.preventDefault();
-  const mod = JSON.parse(e.dataTransfer.getData('text/plain'));
-  chainList.push(mod);
-  renderChainList();
-};
+});
+document.getElementById("chainList").addEventListener("drop", e => {
+  e.preventDefault();
+  const mod = JSON.parse(e.dataTransfer.getData("text/plain"));
+  executionChain.push(mod);
+  const li = document.createElement("li");
+  li.textContent = mod.name;
+  li.dataset.file = mod.file;
+  document.getElementById("chainList").appendChild(li);
+  updateCopilotSuggestions();
+});
 
-function renderChainList() {
-  chainUl.innerHTML = '';
-  chainList.forEach((m, idx) => {
-    const li = document.createElement('li');
-    li.textContent = `${idx + 1}. ${m.name}`;
-    chainUl.appendChild(li);
-  });
-}
-
-// === Execution Functions ===
+// === EXECUTION ===
 async function runChain() {
-  if (chainList.length === 0) return;
-  const res = await fetch('/api/chain', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chain: chainList })
+  if (executionChain.length === 0) return;
+  await fetch(`${apiBase}/api/chain`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chain: executionChain })
   });
-  logToConsole(`[+] Chain launched: ${res.status}`);
 }
 
 async function exportChain() {
-  const blob = new Blob([JSON.stringify(chainList, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'execution_chain.json';
-  a.click();
+  const zip = new JSZip();
+  const chainMeta = {
+    exported: new Date().toISOString(),
+    agent: document.getElementById("agentSelector").value,
+    modules: executionChain
+  };
+  zip.file("chain_metadata.json", JSON.stringify(chainMeta, null, 2));
+  const blob = await zip.generateAsync({ type: "blob" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "chain_export.zip";
+  link.click();
 }
 
 function clearChain() {
-  chainList = [];
-  renderChainList();
+  executionChain = [];
+  document.getElementById("chainList").innerHTML = "";
+  updateCopilotSuggestions();
 }
 
-// === WebSocket Console Logger ===
-function logToConsole(line) {
-  const output = document.getElementById('consoleOutput');
-  output.textContent += line + '\n';
-  output.scrollTop = output.scrollHeight;
-}
+// === WEBSOCKET ===
+function setupWebSocket() {
+  const socket = new WebSocket("ws://localhost:5000/socket.io/?EIO=4&transport=websocket");
 
-function initWebSocket() {
-  const ws = new WebSocket("ws://localhost:5000/socket.io/?EIO=4&transport=websocket");
-
-  ws.onopen = () => logToConsole("[WebSocket] Connected.");
-  ws.onerror = err => logToConsole("[WebSocket] Error: " + err);
-  ws.onmessage = msg => {
+  socket.onopen = () => logToConsole("[WebSocket] Connected.");
+  socket.onmessage = (event) => {
     try {
-      if (msg.data.includes("console_output")) {
-        const payload = JSON.parse(msg.data.split("42")[1]);
-        if (payload && payload[0] === "console_output") {
-          logToConsole(payload[1].line);
-        }
+      const data = JSON.parse(event.data.split("42")[1]);
+      if (data[0] === "console_output") {
+        logToConsole(data[1].line);
+        updateMetricsChart(data[1].line);
       }
-    } catch (e) {
-      logToConsole("[WebSocket] Parse error: " + e);
-    }
+    } catch {}
   };
 }
 
-// === Init ===
-window.onload = () => {
-  fetchAgents();
-  fetchModules();
-  initWebSocket();
-};
+// === CONSOLE ===
+function logToConsole(msg) {
+  const consoleEl = document.getElementById("consoleOutput");
+  consoleEl.textContent += msg + "\n";
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+// === COPILOT ===
+function updateCopilotSuggestions() {
+  const copilot = document.getElementById("copilotList");
+  copilot.innerHTML = "";
+  const last = executionChain[executionChain.length - 1];
+  if (!last) return;
+
+  const keywords = {
+    "firmware": ["Firmware Timeline Builder", "Firmware Persistent Implant"],
+    "gnss": ["GNSS Spoofer", "GNSS Spoof Guard"],
+    "ota": ["OTA Firmware Injector", "OTA Packet Analyzer"],
+    "telemetry": ["Telemetry Guardian", "Threat Classifier"],
+    "c2": ["SATCOM C2 Hijacker", "Payload Launcher"]
+  };
+
+  for (let k in keywords) {
+    if (last.name.toLowerCase().includes(k)) {
+      keywords[k].forEach(s => {
+        const li = document.createElement("li");
+        li.textContent = s;
+        copilot.appendChild(li);
+      });
+    }
+  }
+}
+
+// === AUDIT VIEWER ===
+async function loadAuditTrail() {
+  const res = await fetch("../logs/audit_trail.jsonl");
+  const text = await res.text();
+  const audit = document.getElementById("auditViewer");
+  audit.innerHTML = "";
+  text.trim().split("\n").forEach(line => {
+    try {
+      const data = JSON.parse(line);
+      const li = document.createElement("li");
+      li.textContent = `[${new Date(data.timestamp * 1000).toISOString()}] ${data.module} (${data.agent})`;
+      audit.appendChild(li);
+    } catch {}
+  });
+}
+loadAuditTrail();
+
+// === METRICS ===
+const ctx = document.getElementById("metricsChart").getContext("2d");
+const chart = new Chart(ctx, {
+  type: "bar",
+  data: {
+    labels: [],
+    datasets: [{
+      label: "Module Runs",
+      data: [],
+      backgroundColor: "lime"
+    }]
+  },
+  options: {
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  }
+});
+
+function updateMetricsChart(line) {
+  const match = line.match(/\[\*\] Running (.+)/);
+  if (!match) return;
+  const name = match[1];
+  const i = chart.data.labels.indexOf(name);
+  if (i >= 0) {
+    chart.data.datasets[0].data[i]++;
+  } else {
+    chart.data.labels.push(name);
+    chart.data.datasets[0].data.push(1);
+  }
+  chart.update();
+}

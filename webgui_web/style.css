@@ -1,156 +1,207 @@
-/* General Reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
+/* === Global Styles === */
 body {
-  font-family: "Courier New", monospace;
-  background-color: black;
-  color: lime;
-  overflow: hidden;
+  margin: 0;
+  font-family: 'Courier New', monospace;
+  background-color: #0b0c10;
+  color: #00ff6a;
 }
 
-/* Onboarding Splash */
-#onboarding {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: black;
+h1, h2, h3 {
+  color: #00ff6a;
+  margin-bottom: 10px;
+}
+
+/* === Header === */
+.header {
+  background: #121417;
+  padding: 15px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  transition: opacity 1s ease;
+  justify-content: space-between;
+  border-bottom: 2px solid #00ff6a;
 }
 
-#onboarding img {
-  max-width: 800px;
-  width: 90%;
-  margin-bottom: 40px;
-  animation: zoomFade 4s ease-in-out infinite alternate;
-}
-
-#onboarding h1 {
-  font-size: 2.5rem;
-  color: lime;
-  margin-bottom: 20px;
-}
-
-#onboarding p {
-  font-size: 1.2rem;
-  margin-bottom: 30px;
-  color: #0f0;
-}
-
-#onboarding button {
-  font-size: 1.1rem;
-  background: lime;
-  color: black;
-  border: none;
-  padding: 10px 30px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-@keyframes zoomFade {
-  0% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(1.04);
-    opacity: 1;
-  }
-}
-
-/* Main UI */
-.hidden {
-  display: none;
-}
-
-main {
-  display: flex;
-  height: calc(100vh - 140px);
-}
-
-header.header {
-  background: #111;
-  padding: 20px;
-  border-bottom: 1px solid #333;
-  color: lime;
+.header-logo {
+  height: 60px;
+  margin-right: 20px;
 }
 
 .toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 10px;
 }
 
-.toolbar label,
-.toolbar select,
-.toolbar input {
-  background: black;
-  color: lime;
-  border: 1px solid #444;
+.toolbar input, .toolbar select, .toolbar button {
+  background-color: #1c1f24;
+  color: #00ff6a;
+  border: 1px solid #00ff6a;
   padding: 5px;
 }
 
-/* Module & Chain */
-.module-section,
-.chain-section {
-  flex: 1;
+/* === Layout Grid === */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
   padding: 20px;
-  border-right: 1px solid #222;
+}
+
+.module-section, .chain-section, .map-section, .metrics-section {
+  background: #101216;
+  padding: 15px;
+  border: 1px solid #00ff6a;
+  border-radius: 6px;
+  height: 300px;
   overflow-y: auto;
 }
 
-.chain-section {
-  border-right: none;
+/* === Console Output === */
+.console-section {
+  padding: 15px;
+  background: #111;
+  border-top: 2px solid #00ff6a;
 }
 
 .scrollable {
-  max-height: 400px;
   overflow-y: auto;
-  background: #111;
+  max-height: 300px;
+  background: #0f0f0f;
   padding: 10px;
-  border: 1px solid #333;
+  border: 1px solid #00ff6a;
+  border-radius: 4px;
 }
 
+/* === Execution Chain === */
 .actions {
-  margin-top: 20px;
+  margin-top: 10px;
   display: flex;
   gap: 10px;
 }
 
 .actions button {
-  background: lime;
-  color: black;
-  border: none;
-  padding: 10px 15px;
-  cursor: pointer;
-  font-weight: bold;
-  border-radius: 4px;
+  background-color: #1c1f24;
+  color: #00ff6a;
+  border: 1px solid #00ff6a;
+  padding: 5px 10px;
 }
 
-/* Console */
-.console-section {
-  background: #111;
+#progressBar {
+  width: 100%;
+  margin-top: 10px;
+  height: 15px;
+  background-color: #1c1c1c;
+}
+
+/* === Copilot Panel === */
+.side-panel {
+  position: fixed;
+  right: 0;
+  top: 80px;
+  width: 300px;
+  height: calc(100% - 80px);
+  background-color: #121417;
+  border-left: 2px solid #00ff6a;
   padding: 15px;
-  border-top: 1px solid #333;
+  overflow-y: auto;
+  z-index: 999;
 }
 
-.console-section pre {
-  background: black;
-  color: lime;
+#copilotInput {
+  width: 100%;
+  height: 60px;
+  background: #0f0f0f;
+  color: #00ff6a;
+  border: 1px solid #00ff6a;
+  margin-bottom: 10px;
+}
+
+#copilotResponse {
+  white-space: pre-wrap;
+  background: #0a0a0a;
   padding: 10px;
-  font-size: 0.95rem;
+  border: 1px solid #00ff6a;
+}
+
+/* === Overlay Panels === */
+.overlay-panel {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  background: #0f0f0f;
+  border: 2px solid #00ff6a;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.overlay-panel input, .overlay-panel textarea {
+  width: 100%;
+  background: #0f0f0f;
+  color: #00ff6a;
+  border: 1px solid #00ff6a;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+/* === Audit Viewer === */
+.audit-section {
+  padding: 20px;
+  background: #111;
+  border-top: 2px solid #00ff6a;
+}
+
+#auditOutput {
   height: 200px;
-  overflow-y: auto;
-  border: 1px solid #333;
+}
+
+/* === Map === */
+#agentMap {
+  width: 100%;
+  height: 250px;
+  border: 1px solid #00ff6a;
+  margin-top: 10px;
+}
+
+/* === Onboarding === */
+.overlay-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.onboarding-content {
+  text-align: center;
+  color: #00ff6a;
+}
+
+.onboarding-content img {
+  max-width: 400px;
+  margin-bottom: 20px;
+}
+
+.onboarding-content h1 {
+  font-size: 2em;
+}
+
+.onboarding-content button {
+  margin-top: 15px;
+  background: #1c1f24;
+  color: #00ff6a;
+  padding: 10px 20px;
+  border: 1px solid #00ff6a;
+}
+
+/* === Utility === */
+.hidden {
+  display: none !important;
 }

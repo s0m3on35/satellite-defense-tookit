@@ -1,138 +1,132 @@
 body {
   margin: 0;
   font-family: 'Courier New', Courier, monospace;
-  background-color: #000;
+  background-color: black;
   color: lime;
 }
 
 .header {
   background-color: #111;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  border-bottom: 2px solid #222;
+  padding: 10px 20px;
+  border-bottom: 2px solid #444;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 26px;
 }
 
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
   align-items: center;
-  padding-top: 10px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-select, input[type="text"], button {
-  background-color: #111;
+.toolbar select,
+.toolbar input {
+  padding: 5px;
+  font-size: 14px;
+  background-color: #222;
   color: lime;
-  border: 1px solid lime;
-  padding: 6px 10px;
-  font-family: inherit;
-}
-
-button:hover {
-  background-color: lime;
-  color: black;
-  cursor: pointer;
+  border: 1px solid #444;
 }
 
 .main-layout {
   display: flex;
-  flex-direction: row;
   justify-content: space-between;
-  padding: 10px;
-  gap: 10px;
+  padding: 20px;
 }
 
-.module-section,
-.chain-section {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #333;
-  background-color: #0f0f0f;
+.module-section, .chain-section {
+  width: 48%;
 }
 
 .module-section h2,
 .chain-section h2,
-.copilot-section h3,
-.console-section h3,
-.audit-section h3,
-.metrics-section h3,
-.export-section h3 {
-  margin-top: 0;
-  border-bottom: 1px solid #333;
-  padding-bottom: 5px;
+.console-section h3 {
+  margin-bottom: 10px;
+  color: lime;
 }
 
 .scrollable {
-  max-height: 250px;
+  background-color: #0a0a0a;
+  border: 1px solid #333;
+  max-height: 400px;
   overflow-y: auto;
-  background-color: #000;
-  border: 1px solid #222;
-  padding: 5px;
-  margin-top: 5px;
-  list-style-type: none;
-}
-
-li {
-  padding: 4px 8px;
-  border-bottom: 1px solid #222;
-}
-
-li:hover {
-  background-color: #222;
-  cursor: pointer;
+  padding: 10px;
+  font-size: 14px;
+  color: lime;
 }
 
 .drop-zone {
-  min-height: 150px;
+  border: 2px dashed #555;
+  padding: 10px;
   background-color: #111;
-  border: 2px dashed lime;
 }
 
 .actions {
   margin-top: 10px;
-  display: flex;
-  gap: 10px;
 }
 
-.console-section,
-.copilot-section,
-.audit-section,
-.metrics-section,
-.export-section {
-  padding: 10px;
-  background-color: #0f0f0f;
-  margin: 10px;
-  border: 1px solid #333;
+.actions button {
+  padding: 6px 12px;
+  background-color: #222;
+  border: 1px solid #555;
+  color: lime;
+  cursor: pointer;
+  margin-right: 10px;
 }
 
-pre {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-size: 14px;
-  padding: 5px;
-  border: 1px solid #222;
-  background-color: #000;
+.actions button:hover {
+  background-color: #333;
 }
 
 progress {
   width: 100%;
-  height: 15px;
+  height: 20px;
   margin-top: 10px;
-  background-color: #111;
-  border: 1px solid #333;
 }
 
-progress::-webkit-progress-bar {
-  background-color: #111;
+.console-section {
+  margin: 20px;
 }
 
-progress::-webkit-progress-value {
-  background-color: lime;
+/* Hero Banner Styles */
+.hero-banner {
+  position: relative;
+  width: 100%;
+  max-height: 300px;
+  overflow: hidden;
+  margin-bottom: 20px;
 }
 
-canvas {
-  background-color: #111;
-  padding: 10px;
-  border: 1px solid #222;
+.hero-banner img {
+  width: 100%;
+  object-fit: cover;
+  opacity: 0.85;
+  height: auto;
+}
+
+.banner-text {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -30%);
+  color: lime;
+  text-align: center;
+  text-shadow: 0 0 8px black;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 10px 20px;
+  border-radius: 8px;
+}
+
+.banner-text h2 {
+  font-size: 28px;
+  margin: 0;
+}
+
+.banner-text p {
+  font-size: 16px;
+  margin-top: 5px;
 }

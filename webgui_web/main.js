@@ -8,137 +8,146 @@ const agentSelector = document.getElementById("agentSelector");
 const searchBox = document.getElementById("searchBox");
 
 // === State ===
-let allModules = []; // will be populated with { name, category }
+let allModules = [];
 let chainModules = [];
 
 // === Init ===
 document.addEventListener("DOMContentLoaded", () => {
-  loadAgents();
-  loadModules();
+  fetchAgents();
+  fetchModules();
   setupSearchFilter();
   setupDragAndDrop();
 });
 
-// === Load Agents ===
-function loadAgents() {
-  // Placeholder for backend call
-  const agents = ["default", "satellite-001", "telemetry-agent"];
-  agents.forEach(agent => {
-    const opt = document.createElement("option");
-    opt.value = agent;
-    opt.textContent = agent;
-    agentSelector.appendChild(opt);
-  });
+// === Fetch agents from backend ===
+function fetchAgents() {
+  fetch("http://localhost:5000/api/agents")
+    .then(res => res.json())
+    .then(data => {
+      data.forEach(agent => {
+        const opt = document.createElement("option");
+        opt.value = agent.id || agent;
+        opt.textContent = agent.id || agent;
+        agentSelector.appendChild(opt);
+      });
+    })
+    .catch(() => {
+      const fallback = ["default"];
+      fallback.forEach(agent => {
+        const opt = document.createElement("option");
+        opt.value = agent;
+        opt.textContent = agent;
+        agentSelector.appendChild(opt);
+      });
+    });
 }
 
-// === Load Modules (simulated or backend-ready) ===
-function loadModules() {
-  // Simulated example
-  allModules = [
-    { name: "GNSS Spoofer", category: "Attacks" },
-    { name: "Firmware Integrity Watcher", category: "Defense" },
-    { name: "Copilot Engine", category: "AI" },
-    { name: "Telemetry Guardian", category: "Defense" },
-    { name: "OTA Firmware Injector", category: "Attacks" },
-    { name: "Threat Classifier", category: "AI" }
-  ];
-
-  updateCategoryFilter();
-  renderModuleList();
+// === Fetch modules from backend ===
+function fetchModules() {
+  fetch("http://localhost:5000/api/modules")
+    .then(res => res.json())
+    .then(data => {
+      allModules = data;
+      updateCategoryFilter();
+      renderModuleList();
+    });
 }
 
-// === Render Category Dropdown ===
+// === Populate category dropdown ===
 function updateCategoryFilter() {
-  const uniqueCategories = new Set(allModules.map(m => m.category));
-  uniqueCategories.forEach(cat => {
+  const unique = new Set(allModules.map(m => m.category));
+  unique.forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat;
     opt.textContent = cat;
     categoryFilter.appendChild(opt);
   });
-
   categoryFilter.addEventListener("change", renderModuleList);
 }
 
-// === Search Filter Setup ===
+// === Search filter setup ===
 function setupSearchFilter() {
   searchBox.addEventListener("input", renderModuleList);
 }
 
-// === Filter + Render Modules ===
+// === Filter and render modules ===
 function renderModuleList() {
   const query = searchBox.value.toLowerCase();
-  const selectedCategory = categoryFilter.value;
+  const selectedCat = categoryFilter.value;
 
   moduleListEl.innerHTML = "";
 
   allModules
-    .filter(mod =>
-      (selectedCategory === "All" || mod.category === selectedCategory) &&
-      mod.name.toLowerCase().includes(query)
+    .filter(m =>
+      (selectedCat === "All" || m.category === selectedCat) &&
+      m.name.toLowerCase().includes(query)
     )
     .forEach(mod => {
       const li = document.createElement("li");
       li.textContent = mod.name;
       li.draggable = true;
       li.dataset.name = mod.name;
+      li.dataset.file = mod.file;
       li.addEventListener("dragstart", e => {
-        e.dataTransfer.setData("text/plain", mod.name);
+        e.dataTransfer.setData("text/plain", JSON.stringify(mod));
       });
       moduleListEl.appendChild(li);
     });
 }
 
-// === Drag and Drop Setup ===
+// === Drag-and-drop setup ===
 function setupDragAndDrop() {
   chainListEl.addEventListener("dragover", e => e.preventDefault());
 
   chainListEl.addEventListener("drop", e => {
     e.preventDefault();
-    const moduleName = e.dataTransfer.getData("text/plain");
-    if (moduleName) {
-      const li = document.createElement("li");
-      li.textContent = moduleName;
-      li.dataset.name = moduleName;
-      chainListEl.appendChild(li);
-      chainModules.push(moduleName);
-    }
+    const mod = JSON.parse(e.dataTransfer.getData("text/plain"));
+    const li = document.createElement("li");
+    li.textContent = mod.name;
+    li.dataset.name = mod.name;
+    li.dataset.file = mod.file;
+    chainListEl.appendChild(li);
+    chainModules.push(mod);
   });
 }
 
-// === Run Chain ===
+// === Run execution chain live ===
 function runChain() {
-  const items = chainListEl.querySelectorAll("li");
-  const sequence = Array.from(items).map(i => i.dataset.name);
-  if (sequence.length === 0) {
+  const sequence = Array.from(chainListEl.querySelectorAll("li")).map(li => ({
+    name: li.dataset.name,
+    file: li.dataset.file
+  }));
+
+  if (!sequence.length) {
     logOutput("No modules selected.");
     return;
   }
 
   progressBar.value = 0;
-  logOutput("Executing module chain: " + sequence.join(" -> "));
+  logOutput("Executing module chain...");
 
-  let i = 0;
-  function next() {
-    if (i >= sequence.length) {
+  fetch("http://localhost:5000/api/chain", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chain: sequence })
+  })
+    .then(res => res.json())
+    .then(results => {
+      results.forEach(entry => {
+        if (entry.output) {
+          logOutput(`[â] ${entry.module}: ${entry.output}`);
+        } else {
+          logOutput(`[â] ${entry.module}: ${entry.error}`);
+        }
+      });
       progressBar.value = 100;
-      logOutput("Execution complete.");
-      suggestNext(sequence[sequence.length - 1]); // Copilot stub
-      return;
-    }
-    const mod = sequence[i++];
-    logOutput(`[+] Running: ${mod}`);
-    progressBar.value = Math.floor((i / sequence.length) * 100);
-
-    // Optionally: fetch('/api/run', { method: 'POST', body: JSON.stringify({ module: mod }) })
-
-    setTimeout(next, 1200); // Simulated delay
-  }
-
-  next();
+    })
+    .catch(err => {
+      logOutput("Execution error: " + err.message);
+    });
 }
 
-// === Clear Chain ===
+// === Clear chain list ===
 function clearChain() {
   chainModules = [];
   chainListEl.innerHTML = "";
@@ -146,9 +155,12 @@ function clearChain() {
   logOutput("Chain cleared.");
 }
 
-// === Export Chain ===
+// === Export chain to JSON ===
 function exportChain() {
-  const sequence = Array.from(chainListEl.querySelectorAll("li")).map(li => li.dataset.name);
+  const sequence = Array.from(chainListEl.querySelectorAll("li")).map(li => ({
+    name: li.dataset.name,
+    file: li.dataset.file
+  }));
   const blob = new Blob([JSON.stringify(sequence, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -158,19 +170,9 @@ function exportChain() {
   URL.revokeObjectURL(url);
 }
 
-// === Console Logging ===
-function logOutput(message) {
+// === Log output to terminal area ===
+function logOutput(msg) {
   const ts = new Date().toLocaleTimeString();
-  consoleOutput.textContent += `[${ts}] ${message}\n`;
+  consoleOutput.textContent += `[${ts}] ${msg}\n`;
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
-}
-
-// === Copilot Stub ===
-function suggestNext(lastModule) {
-  const suggestions = allModules
-    .filter(m => m.name !== lastModule && m.category === "AI")
-    .map(m => m.name);
-  if (suggestions.length) {
-    logOutput(`Copilot suggestion: Next module may be "${suggestions[0]}"`);
-  }
 }

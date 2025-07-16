@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Load tsParticles animated background
   tsParticles.load("tsparticles", {
     fullScreen: { enable: true, zIndex: -1 },
     particles: {
@@ -35,7 +36,10 @@ document.addEventListener("DOMContentLoaded", () => {
     detectRetina: true
   });
 
-  const animatedElements = document.querySelectorAll(".card, .about, header .overlay, h2, footer");
+  // Animate on scroll
+  const animatedElements = document.querySelectorAll(
+    ".card, .about, header .overlay, h2, footer"
+  );
 
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
@@ -48,6 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   animatedElements.forEach(el => observer.observe(el));
 
+  // Smooth scroll for internal links
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener("click", function (e) {
       e.preventDefault();

@@ -14,24 +14,12 @@
   <link rel="stylesheet" href="assets/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/tsparticles@3/tsparticles.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener("click", function (e) {
-          e.preventDefault();
-          document.querySelector(this.getAttribute("href")).scrollIntoView({
-            behavior: "smooth"
-          });
-        });
-      });
-    });
-  </script>
 </head>
 
 <body>
   <div id="tsparticles"></div>
 
-  <header class="hero" style="background-image: url('assets/hero-bg.PNG');">
+  <header class="hero">
     <div class="overlay">
       <h1>Satellite Defense Toolkit</h1>
       <p>Secure Against Attacks · AI & Monitoring · Forensics & Pen Tests</p>
@@ -42,47 +30,50 @@
   </header>
 
   <main>
-    <section class="features" id="features">
+    <section class="features">
       <h2>Toolkit Highlights</h2>
       <div class="cards">
         <article class="card">
           <h3>Real-Time Defense</h3>
-          <p>Live GNSS spoofing detection, firmware shields, anomaly alerts.</p>
+          <p>Live GNSS spoofing detection, firmware integrity shields, and anomaly alerts.</p>
         </article>
         <article class="card">
           <h3>AI Monitoring</h3>
-          <p>Telemetry analysis, Copilot chaining, and AI-based suggestions.</p>
+          <p>Telemetry analysis, Copilot chaining, and automated defense recommendations.</p>
         </article>
         <article class="card">
           <h3>Red & Purple Teaming</h3>
-          <p>RF jammer mapping, C2 dashboards, persistent implants.</p>
+          <p>RF jammer location, implant persistence, live C2 dashboards, and adversary simulation.</p>
         </article>
       </div>
     </section>
 
-    <section class="modules" id="modules">
+    <section class="modules-showcase">
       <h2>Module Showcase</h2>
-      <div class="module-icons">
-        <div class="module-icon" onclick="scrollToSection('docs')">
-          <img src="assets/icons/ai.svg" alt="AI" />
-          <p>AI Copilot</p>
-        </div>
-        <div class="module-icon" onclick="scrollToSection('docs')">
-          <img src="assets/icons/gnss.svg" alt="GNSS" />
-          <p>GNSS Shield</p>
-        </div>
-        <div class="module-icon" onclick="scrollToSection('docs')">
-          <img src="assets/icons/firmware.svg" alt="Firmware" />
-          <p>Firmware Validator</p>
-        </div>
-        <div class="module-icon" onclick="scrollToSection('docs')">
-          <img src="assets/icons/forensics.svg" alt="Forensics" />
-          <p>Forensics</p>
-        </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="forensics">Forensics</button>
+        <button class="filter-btn" data-filter="rf">RF</button>
+        <button class="filter-btn" data-filter="ai">AI</button>
+      </div>
+
+      <!-- Module Icons -->
+      <div class="modules-grid">
+        <div class="module-icon forensics" onclick="scrollToSection('forensics')">Forensics</div>
+        <div class="module-icon forensics" onclick="scrollToSection('timeline')">Timeline</div>
+        <div class="module-icon rf" onclick="scrollToSection('rf')">RF Tools</div>
+        <div class="module-icon rf" onclick="scrollToSection('jammer')">Jammer Locator</div>
+        <div class="module-icon ai" onclick="scrollToSection('ai')">AI Engine</div>
+        <div class="module-icon ai" onclick="scrollToSection('copilot')">Copilot</div>
+        <div class="module-icon ai" onclick="scrollToSection('metrics')">Anomaly Detection</div>
+        <div class="module-icon" onclick="scrollToSection('c2')">C2 Mesh</div>
+        <div class="module-icon" onclick="scrollToSection('dashboard')">Web Dashboard</div>
       </div>
     </section>
 
-    <section class="about" id="about">
+    <section class="about">
       <h2>About the Toolkit</h2>
       <p>The Satellite Defense Toolkit is a professional-grade security framework built for aerospace, satellite, and ground station protection. It combines AI-driven monitoring, exploit simulation, and forensic automation to secure mission-critical space systems.</p>
     </section>
@@ -90,11 +81,6 @@
     <section class="metrics-section" id="metrics">
       <h2>Toolkit Usage Metrics</h2>
       <canvas id="metricsChart" width="600" height="300"></canvas>
-    </section>
-
-    <section class="docs" id="docs">
-      <h2>Documentation</h2>
-      <p>Read the <a href="docs/wiki/Overview.md">Overview.md</a>, <a href="docs/wiki/Architecture.md">Architecture.md</a>, and other technical documentation inside the <code>/docs/wiki/</code> folder.</p>
     </section>
 
     <section class="callout">
@@ -107,38 +93,33 @@
   </main>
 
   <footer>
-    <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations created by D</p>
+    <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations by s0m3on35</p>
   </footer>
 
   <script>
     function scrollToSection(id) {
       const el = document.getElementById(id);
       if (el) {
-        el.scrollIntoView({ behavior: "smooth" });
+        el.scrollIntoView({ behavior: 'smooth' });
       }
     }
 
-    const ctx = document.getElementById("metricsChart");
-    if (ctx) {
-      new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: ["Defense", "AI", "Forensics", "C2", "Visualization"],
-          datasets: [{
-            label: "Modules Executed",
-            data: [18, 12, 9, 14, 11],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          scales: {
-            y: {
-              beginAtZero: true
-            }
+    // Module filter logic
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.getAttribute('data-filter');
+
+        document.querySelectorAll('.module-icon').forEach(icon => {
+          if (filter === 'all' || icon.classList.contains(filter)) {
+            icon.style.display = 'flex';
+          } else {
+            icon.style.display = 'none';
           }
-        }
+        });
       });
-    }
+    });
   </script>
 
   <script src="assets/script.js"></script>

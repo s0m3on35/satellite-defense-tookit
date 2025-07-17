@@ -72,7 +72,7 @@
     AOS.init();
 
     const modules = [
-      // --- Defense (complete) ---
+      // --- Defense ---
       { name: "Firmware Memory Shield", tag: "defense" },
       { name: "Firewall Rule Generator", tag: "defense" },
       { name: "GNSS Spoof Guard", tag: "defense" },
@@ -110,10 +110,20 @@
 
       // --- Forensics ---
       { name: "Firmware Timeline Builder", tag: "forensics" },
-      { name: "Firmware CVE Mapper", tag: "forensics" },
 
-      // --- Intel / Stats / AI ---
-      { name: "YARA STIX Exporter", tag: "intel" },
+      // --- Intel ---
+      { name: "Firmware CVE Mapper", tag: "intel" },
+      { name: "Zero-Day Mapper", tag: "intel" },
+      { name: "MITRE ATT&CK Tagger", tag: "intel" },
+      { name: "Threat Feed Watcher", tag: "intel" },
+      { name: "IOC Analyzer", tag: "intel" },
+      { name: "OSINT Satellite Tracker", tag: "intel" },
+      { name: "Anomaly Signature Builder", tag: "intel" },
+      { name: "Intel Timeline Builder", tag: "intel" },
+      { name: "Firmware Reputation Score", tag: "intel" },
+      { name: "Supply Chain Risk Scanner", tag: "intel" },
+
+      // --- Stats / AI ---
       { name: "Telemetry Heatmap Generator", tag: "stats" },
       { name: "Anomaly Detector LSTM", tag: "ai" },
       { name: "Copilot Recon Assistant", tag: "ai" }

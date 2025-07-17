@@ -67,12 +67,13 @@
     <p>© 2025 Satellite Defense Toolkit • MIT License • Built by RedOps Division (D)</p>
   </footer>
 
+  <!-- SCRIPT -->
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
   <script>
     AOS.init();
 
     const modules = [
-      // --- Defense ---
+      // Defense
       { name: "Firmware Memory Shield", tag: "defense" },
       { name: "Firewall Rule Generator", tag: "defense" },
       { name: "GNSS Spoof Guard", tag: "defense" },
@@ -90,31 +91,39 @@
       { name: "System Call Anomaly Watcher", tag: "defense" },
       { name: "Telemetry Guardian", tag: "defense" },
 
-      // --- Recon ---
+      // Recon
       { name: "BLE Scanner", tag: "recon" },
       { name: "RF SDR Capture", tag: "recon" },
       { name: "GNSS Anomaly Detector", tag: "recon" },
+      { name: "Passive Satellite Fingerprinter", tag: "recon" },
+      { name: "SDR Burst Signal Detector", tag: "recon" },
+      { name: "RTCM Interceptor", tag: "recon" },
 
-      // --- Exploit ---
+      // Exploit
       { name: "Iframe Payload Injector", tag: "exploit" },
       { name: "Upload Poisoner", tag: "exploit" },
       { name: "OTA Backdoor Stager", tag: "exploit" },
       { name: "Public Screen Overwriter", tag: "exploit" },
       { name: "Firmware Dropper", tag: "exploit" },
 
-      // --- C2 ---
+      // C2
       { name: "DNS C2", tag: "c2" },
       { name: "Agent Commander", tag: "c2" },
       { name: "Agent Mesh Router", tag: "c2" },
       { name: "RF Stego Dropper", tag: "c2" },
       { name: "Fallback GNSS Beacon C2", tag: "c2" },
       { name: "Signal-aware Dead-Drop Uploader", tag: "c2" },
+      { name: "Dead-Drop Uploader", tag: "c2" },
+      { name: "Dead-Drop Receiver", tag: "c2" },
+      { name: "RF Stego Receiver", tag: "c2" },
 
-      // --- Forensics ---
+      // Forensics
       { name: "Firmware Timeline Builder", tag: "forensics" },
       { name: "Firmware CVE Mapper", tag: "forensics" },
+      { name: "Signal Artifact Timeline Builder", tag: "forensics" },
+      { name: "Satellite Telemetry Playback", tag: "forensics" },
 
-      // --- Intel ---
+      // Intel
       { name: "YARA STIX Exporter", tag: "intel" },
       { name: "Zero-Day Mapper", tag: "intel" },
       { name: "Threat Group Tracker", tag: "intel" },
@@ -126,7 +135,7 @@
       { name: "AI Threat Pattern Classifier", tag: "intel" },
       { name: "C2 Infra Analyzer", tag: "intel" },
 
-      // --- Stats / AI ---
+      // AI / Stats
       { name: "Telemetry Heatmap Generator", tag: "stats" },
       { name: "Anomaly Detector LSTM", tag: "ai" },
       { name: "Copilot Recon Assistant", tag: "ai" }

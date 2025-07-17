@@ -6,13 +6,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta property="og:image" content="assets/social_preview.PNG" />
   <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3.0.3/tsparticles.bundle.min.js"></script>
 </head>
 <body>
+  <div id="tsparticles"></div>
 
   <!-- HERO SECTION -->
   <header class="hero">
     <img src="assets/hero-bg.PNG" alt="Satellite Defense Toolkit" class="hero-image" />
-    <div class="hero-overlay">
+    <div class="hero-overlay" data-aos="fade-up">
       <h1>Satellite Defense Toolkit</h1>
       <p>Advanced Red & Blue Teaming for Space, IoT & Edge Devices</p>
       <div class="cta-buttons">
@@ -23,30 +27,40 @@
   </header>
 
   <!-- FEATURES -->
-  <section class="features">
+  <section class="features" data-aos="fade-up">
     <h2>Main Capabilities</h2>
     <div class="features-grid">
-      <div class="feature-card">
-        <h3>Exploits</h3>
-        <p>offensive operations on lab space system.</p>t
-      </div>
-      <div class="feature-card">
-        <h3>Signal Recon</h3>
-        <p>Capture and analyze SDR, GNSS, BLE, RF, and satellite data.</p>
-      </div>
-      <div class="feature-card">
-        <h3>Live Telemetry</h3>
-        <p>Monitor satellite signals and AI-detect anomalies in real time.</p>
-      </div>
-      <div class="feature-card">
-        <h3>Operational Dashboard</h3>
-        <p>Control modules and agents with a live, tactical web interface.</p>
-      </div>
+      <div class="feature-card"><h3>Exploits</h3><p>Offensive operations on lab space systems.</p></div>
+      <div class="feature-card"><h3>Signal Recon</h3><p>Capture and analyze SDR, GNSS, BLE, RF, and satellite data.</p></div>
+      <div class="feature-card"><h3>Live Telemetry</h3><p>Monitor satellite signals and AI-detect anomalies in real time.</p></div>
+      <div class="feature-card"><h3>Operational Dashboard</h3><p>Control modules and agents with a live, tactical web interface.</p></div>
     </div>
   </section>
 
-  <!-- INSTRUCTIONS -->
-  <section class="how-to">
+  <!-- MODULE FILTER -->
+  <section class="modules-section" data-aos="fade-up">
+    <h2>Browse Modules</h2>
+    <label for="moduleTag">Filter by tag:</label>
+    <select id="moduleTag">
+      <option value="all">All</option>
+      <option value="recon">Recon</option>
+      <option value="exploit">Exploit</option>
+      <option value="c2">C2</option>
+      <option value="forensics">Forensics</option>
+    </select>
+    <div id="modulesContainer" class="features-grid">
+      <!-- JS fills this in -->
+    </div>
+  </section>
+
+  <!-- METRICS -->
+  <section class="metrics-section" data-aos="fade-up">
+    <h2>Real-Time Toolkit Metrics</h2>
+    <canvas id="telemetryChart" width="600" height="300"></canvas>
+  </section>
+
+  <!-- GETTING STARTED -->
+  <section class="how-to" data-aos="fade-up">
     <h2>Getting Started</h2>
     <ol>
       <li>Clone the repo: <code>git clone https://github.com/s0m3on35/satellite-defense-toolkit</code></li>
@@ -58,9 +72,79 @@
 
   <!-- FOOTER -->
   <footer>
-    <p>© 2025 Satellite Defense Toolkit • MIT License • Built by RedOps Division created by (D)</p>
+    <p>© 2025 Satellite Defense Toolkit • MIT License • Built by RedOps Division (D)</p>
   </footer>
 
-  <script src="assets/script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+  <script>
+    AOS.init();
+
+    // Module filtering
+    const modules = [
+      { name: "BLE Scanner", tag: "recon" },
+      { name: "Wi-Fi Attack", tag: "exploit" },
+      { name: "DNS C2", tag: "c2" },
+      { name: "Firmware Timeline Builder", tag: "forensics" }
+    ];
+
+    function renderModules(tag = "all") {
+      const container = document.getElementById("modulesContainer");
+      container.innerHTML = "";
+      modules.forEach(m => {
+        if (tag === "all" || m.tag === tag) {
+          const div = document.createElement("div");
+          div.className = "feature-card";
+          div.innerHTML = `<h3>${m.name}</h3><p>Category: ${m.tag}</p>`;
+          container.appendChild(div);
+        }
+      });
+    }
+
+    document.getElementById("moduleTag").addEventListener("change", e => {
+      renderModules(e.target.value);
+    });
+
+    renderModules();
+
+    // Chart.js telemetry example
+    const ctx = document.getElementById("telemetryChart").getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: ["00:00", "01:00", "02:00", "03:00", "04:00"],
+        datasets: [{
+          label: "Telemetry Packets/sec",
+          data: [2, 4, 8, 6, 7],
+          borderColor: "lime",
+          backgroundColor: "rgba(0,255,0,0.2)",
+          fill: true,
+          tension: 0.2
+        }]
+      },
+      options: {
+        scales: {
+          x: { display: true, title: { display: true, text: "Time" } },
+          y: { beginAtZero: true }
+        },
+        plugins: {
+          legend: { labels: { color: "#0f0" } }
+        }
+      }
+    });
+
+    // Particle background
+    tsParticles.load("tsparticles", {
+      fullScreen: { enable: true },
+      background: { color: "#000" },
+      particles: {
+        number: { value: 75 },
+        color: { value: "#00ff99" },
+        shape: { type: "circle" },
+        opacity: { value: 0.3 },
+        size: { value: { min: 1, max: 4 } },
+        move: { enable: true, speed: 0.5 }
+      }
+    });
+  </script>
 </body>
 </html>

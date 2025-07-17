@@ -48,28 +48,24 @@
       </div>
     </section>
 
-    <section class="modules-showcase">
+    <section class="module-showcase">
       <h2>Module Showcase</h2>
-
-      <!-- Filter Bar -->
-      <div class="filter-bar">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="forensics">Forensics</button>
-        <button class="filter-btn" data-filter="rf">RF</button>
-        <button class="filter-btn" data-filter="ai">AI</button>
+      <div class="module-filters">
+        <button class="active">All</button>
+        <button>Forensics</button>
+        <button>RF</button>
+        <button>AI</button>
+        <button>Defense</button>
       </div>
-
-      <!-- Module Icons -->
-      <div class="modules-grid">
-        <div class="module-icon forensics" onclick="scrollToSection('forensics')">Forensics</div>
-        <div class="module-icon forensics" onclick="scrollToSection('timeline')">Timeline</div>
-        <div class="module-icon rf" onclick="scrollToSection('rf')">RF Tools</div>
-        <div class="module-icon rf" onclick="scrollToSection('jammer')">Jammer Locator</div>
-        <div class="module-icon ai" onclick="scrollToSection('ai')">AI Engine</div>
-        <div class="module-icon ai" onclick="scrollToSection('copilot')">Copilot</div>
-        <div class="module-icon ai" onclick="scrollToSection('metrics')">Anomaly Detection</div>
-        <div class="module-icon" onclick="scrollToSection('c2')">C2 Mesh</div>
-        <div class="module-icon" onclick="scrollToSection('dashboard')">Web Dashboard</div>
+      <div class="module-grid">
+        <div class="module-icon" data-type="forensics">Timeline Builder</div>
+        <div class="module-icon" data-type="forensics">Firmware Scanner</div>
+        <div class="module-icon" data-type="rf">Jammer Locator</div>
+        <div class="module-icon" data-type="rf">RF Signal Capture</div>
+        <div class="module-icon" data-type="ai">Copilot Recon</div>
+        <div class="module-icon" data-type="ai">Anomaly Detection</div>
+        <div class="module-icon" data-type="defense">Web Dashboard</div>
+        <div class="module-icon" data-type="defense">GNSS Spoof Guard</div>
       </div>
     </section>
 
@@ -78,7 +74,7 @@
       <p>The Satellite Defense Toolkit is a professional-grade security framework built for aerospace, satellite, and ground station protection. It combines AI-driven monitoring, exploit simulation, and forensic automation to secure mission-critical space systems.</p>
     </section>
 
-    <section class="metrics-section" id="metrics">
+    <section class="metrics-section">
       <h2>Toolkit Usage Metrics</h2>
       <canvas id="metricsChart" width="600" height="300"></canvas>
     </section>
@@ -93,35 +89,25 @@
   </main>
 
   <footer>
-    <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations by s0m3on35</p>
+    <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations by D</p>
   </footer>
 
   <script>
-    function scrollToSection(id) {
-      const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+    const buttons = document.querySelectorAll(".module-filters button");
+    const modules = document.querySelectorAll(".module-icon");
 
-    // Module filter logic
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const filter = btn.getAttribute('data-filter');
+    buttons.forEach(button => {
+      button.addEventListener("click", () => {
+        buttons.forEach(btn => btn.classList.remove("active"));
+        button.classList.add("active");
 
-        document.querySelectorAll('.module-icon').forEach(icon => {
-          if (filter === 'all' || icon.classList.contains(filter)) {
-            icon.style.display = 'flex';
-          } else {
-            icon.style.display = 'none';
-          }
+        const type = button.textContent.toLowerCase();
+        modules.forEach(mod => {
+          mod.style.display = type === "all" || mod.dataset.type === type ? "block" : "none";
         });
       });
     });
   </script>
-
   <script src="assets/script.js"></script>
 </body>
 </html>

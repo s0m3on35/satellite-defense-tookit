@@ -138,6 +138,5 @@ MIT License – See `LICENSE.md`
 
 ## Author
 
-Maintained by the Satellite Offensive Research Division lead by someone (D)
-
+Maintained by the Satellite Purple Research Division led by someone (D)  
 GitHub: [https://github.com/s0m3on35/satellite-defense-toolkit](https://github.com/s0m3on35/satellite-defense-toolkit)

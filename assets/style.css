@@ -1,4 +1,4 @@
-/* General Reset and Base Styles */
+/* Base Reset & Typography */
 * {
   margin: 0;
   padding: 0;
@@ -12,21 +12,23 @@ body {
   color: #e0e6ed;
   line-height: 1.6;
   overflow-x: hidden;
+  position: relative;
 }
 
-/* Links */
+/* Link Styles */
 a {
   color: #1abc9c;
   text-decoration: none;
   transition: color 0.3s ease;
 }
+
 a:hover {
   color: #16a085;
 }
 
 /* Hero Header */
 header.hero {
-  background-image: url("hero-bg.PNG");
+  background-image: url("assets/hero-bg.PNG");
   background-attachment: fixed;
   background-size: cover;
   background-position: center;
@@ -36,7 +38,9 @@ header.hero {
   justify-content: center;
   position: relative;
   color: white;
+  z-index: 1;
 }
+
 header .overlay {
   background: rgba(0, 0, 0, 0.65);
   padding: 40px;
@@ -47,14 +51,17 @@ header .overlay {
   opacity: 0;
   transform: translateY(20px);
 }
+
 header h1 {
-  font-size: 3.5rem;
+  font-size: 3rem;
   margin-bottom: 20px;
 }
+
 header p {
   font-size: 1.2rem;
   margin-bottom: 30px;
 }
+
 .cta {
   background: #1abc9c;
   color: white;
@@ -64,34 +71,40 @@ header p {
   display: inline-block;
   transition: background 0.3s ease, transform 0.3s ease;
 }
+
 .cta:hover {
   background: #159d85;
   transform: scale(1.05);
 }
 
-/* Main */
+/* Main Layout */
 main {
   padding: 60px 20px;
   max-width: 1100px;
   margin: auto;
+  z-index: 1;
   position: relative;
 }
+
 h2 {
   font-size: 2rem;
   margin-bottom: 30px;
   text-align: center;
   color: #ffffff;
+  position: relative;
   animation: fadeInDown 1s ease forwards;
   opacity: 0;
   transform: translateY(-20px);
 }
 
-/* Cards */
+/* Feature Cards */
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 30px;
+  justify-items: center;
 }
+
 .card {
   background: #1c2433;
   border-radius: 10px;
@@ -102,96 +115,55 @@ h2 {
   transform: translateY(30px);
   animation: fadeInCard 1s ease forwards;
 }
+
 .card:hover {
   transform: translateY(-8px);
   box-shadow: 0 6px 20px rgba(0, 255, 255, 0.2);
 }
+
 .card h3 {
   font-size: 1.3rem;
   margin-bottom: 10px;
   color: #1abc9c;
 }
+
 .card p {
   color: #d2dbe8;
   font-size: 0.95rem;
 }
 
-/* Module Showcase */
-.module-showcase {
+/* About Section */
+.about {
   margin-top: 60px;
   text-align: center;
-}
-.module-filters {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-.module-filters button {
-  background: transparent;
-  border: 2px solid #1abc9c;
-  color: #1abc9c;
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-.module-filters button.active,
-.module-filters button:hover {
-  background: #1abc9c;
-  color: #fff;
-  transform: scale(1.05);
-  box-shadow: 0 0 10px rgba(26, 188, 156, 0.5);
-}
-.module-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 20px;
-  justify-items: center;
-  margin-top: 20px;
-}
-.module-icon {
-  background: #1a2233;
-  color: #1abc9c;
-  padding: 14px;
-  border-radius: 10px;
-  width: 100%;
-  text-align: center;
-  font-weight: bold;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-}
-.module-icon:hover {
-  background: #159d85;
-  color: white;
-  transform: scale(1.07);
-  box-shadow: 0 4px 12px rgba(21, 157, 133, 0.5);
-}
-
-/* About + Callout */
-.about, .callout {
-  margin-top: 60px;
-  text-align: center;
-  animation: fadeInUp 1s ease forwards;
   opacity: 0;
   transform: translateY(40px);
+  animation: fadeInUp 1s ease forwards;
 }
-.about p, .callout p {
+
+.about p {
   max-width: 800px;
   margin: auto;
   font-size: 1rem;
   color: #cdd4e0;
 }
+
+/* Call to Action */
 .callout {
+  margin-top: 80px;
+  text-align: center;
   background: #1b2735;
   padding: 60px 20px;
   border-radius: 12px;
+  animation: fadeInUp 1s ease forwards;
+  opacity: 0;
+  transform: translateY(40px);
 }
+
 .callout h2 {
   color: #1abc9c;
 }
+
 .callout .cta.secondary {
   margin-top: 25px;
   display: inline-block;
@@ -201,6 +173,7 @@ h2 {
   padding: 12px 26px;
   border-radius: 6px;
 }
+
 .callout .cta.secondary:hover {
   background: #1abc9c;
   color: #fff;
@@ -219,6 +192,68 @@ footer {
   transform: translateY(20px);
 }
 
+/* Particles Background */
+#tsparticles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Module Showcase Filters */
+.module-filters {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.module-filters button {
+  background: #121a28;
+  color: #1abc9c;
+  border: 1px solid #1abc9c;
+  padding: 10px 20px;
+  margin: 0 5px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.module-filters button:hover,
+.module-filters button.active {
+  background: #1abc9c;
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 0 10px #1abc9c;
+}
+
+/* Module Icons Grid */
+.module-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 30px;
+  gap: 15px;
+}
+
+.module-item {
+  background: #1e2a3d;
+  padding: 12px 18px;
+  border-radius: 10px;
+  color: #1abc9c;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.module-item:hover {
+  background: #159d85;
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 0 10px #1abc9c;
+}
+
 /* Metrics Chart */
 #metricsChart {
   display: block;
@@ -229,16 +264,6 @@ footer {
   padding: 30px;
 }
 
-/* Background particle canvas */
-#tsparticles {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-}
-
 /* Animations */
 @keyframes fadeInUp {
   to {
@@ -246,12 +271,14 @@ footer {
     transform: translateY(0);
   }
 }
+
 @keyframes fadeInDown {
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 @keyframes fadeInCard {
   to {
     opacity: 1;

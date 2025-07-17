@@ -1,145 +1,167 @@
-/* Reset and Base */
+/* General Reset */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Roboto, sans-serif;
 }
 
+/* Background and Body */
 body {
+  font-family: 'Courier New', Courier, monospace;
   background-color: #0a0e1a;
   background-image: url('assets/hero-bg.PNG');
   background-size: cover;
-  background-position: center;
   background-repeat: no-repeat;
+  background-position: center;
+  background-attachment: fixed;
   min-height: 100vh;
-  color: #e0e6f0;
+  width: 100vw;
+  color: #e0f2f1;
   line-height: 1.6;
   overflow-x: hidden;
 }
 
-/* Layout Wrappers */
+/* Wrapper container */
 .wrapper {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2rem 1.5rem;
+  width: 100%;
 }
 
-h1, h2, h3 {
-  margin-bottom: 1rem;
-  color: #00ffc3;
-  text-align: center;
-}
-
-/* Hero Banner Overlay */
+/* Hero Section */
 .hero {
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.75);
   padding: 4rem 2rem;
+  border-radius: 10px;
   text-align: center;
-  border-bottom: 1px solid #00ffc3;
+  color: #00ffc3;
+  box-shadow: 0 0 10px #00ffc3;
+  margin-bottom: 2rem;
 }
 
-.hero h1 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  text-shadow: 0 0 12px rgba(0, 255, 195, 0.5);
-}
-
-.hero p {
-  font-size: 1.2rem;
-  color: #c9d6e1;
-}
-
-/* CTA Buttons */
-.cta-buttons {
-  margin-top: 2rem;
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.button {
-  padding: 0.75rem 1.5rem;
-  border: none;
+/* Headings */
+h1, h2, h3 {
   font-weight: bold;
-  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 2.8rem;
+}
+
+h2 {
+  font-size: 1.8rem;
+  color: #00ffc3;
+}
+
+h3 {
+  font-size: 1.3rem;
+  color: #0ef0b8;
+}
+
+/* Paragraphs */
+p {
+  font-size: 1.05rem;
+  color: #cdefff;
+  margin-bottom: 1rem;
+}
+
+/* Buttons */
+.button {
   background-color: #00ffc3;
   color: #000;
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 1rem;
+  margin: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .button:hover {
-  background-color: #00ddb3;
-}
-
-.button.secondary {
-  background-color: #1e2535;
-  border: 1px solid #00ffc3;
-  color: #ffffff;
-}
-
-.button.secondary:hover {
-  background-color: #293041;
+  background-color: #00bfa6;
+  color: #fff;
 }
 
 /* Features Section */
 .features {
-  background: rgba(0, 0, 0, 0.75);
-  padding: 3rem 2rem;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2rem;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+  box-shadow: 0 0 8px #0ef0b8;
 }
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 1fr;
   gap: 2rem;
-  max-width: 1100px;
-  margin: 0 auto;
 }
 
-.feature-card {
-  background-color: #121821;
+/* Individual Cards */
+.card {
+  background-color: #0d1a26;
   border: 1px solid #00ffc3;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 0 8px rgba(0, 255, 195, 0.2);
+  transition: all 0.3s ease;
+  color: #e0f2f1;
 }
 
-.feature-card h3 {
-  color: #00ffc3;
-  margin-bottom: 0.5rem;
+.card:hover {
+  background-color: #13232f;
+  box-shadow: 0 0 12px #00ffc3;
 }
 
 /* Getting Started Section */
 .getting-started {
-  padding: 3rem 2rem;
-  background: rgba(0, 0, 0, 0.85);
-  color: #d0dae3;
-}
-
-.getting-started ol {
-  max-width: 800px;
-  margin: 0 auto;
-  list-style: decimal inside;
-  padding-left: 1rem;
-  font-size: 1rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: rgba(0, 255, 195, 0.05);
+  border-left: 3px solid #00ffc3;
+  border-radius: 4px;
+  color: #99e6ff;
+  font-size: 0.95rem;
 }
 
 .getting-started code {
-  background-color: #1e2535;
-  padding: 0.3rem 0.5rem;
-  border-radius: 4px;
+  background: #111;
   color: #00ffc3;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
   font-family: monospace;
 }
 
 /* Footer */
 footer {
+  margin-top: 2rem;
+  font-size: 0.85rem;
   text-align: center;
-  background-color: #0a0e1a;
-  padding: 1.5rem 1rem;
-  font-size: 0.9rem;
-  color: #7a8ca0;
-  border-top: 1px solid #1f2635;
+  color: #778899;
+}
+
+/* Responsive */
+@media (min-width: 600px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 960px) {
+  .features-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .hero h1 {
+    font-size: 3.5rem;
+  }
+
+  .wrapper {
+    padding: 3rem;
+  }
 }

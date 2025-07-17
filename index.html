@@ -8,53 +8,58 @@
   <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
+
+  <!-- HERO SECTION -->
   <header class="hero">
-    <img src="assets/hero-bg.PNG" alt="Satellite Defense Toolkit" class="hero-image">
-    <div class="hero-content">
+    <img src="assets/hero-bg.PNG" alt="Satellite Defense Toolkit" class="hero-image" />
+    <div class="hero-overlay">
       <h1>Satellite Defense Toolkit</h1>
-      <p class="tagline">AI-Enhanced Security • Forensics • Recon • Exploits • Space Hardening</p>
+      <p>Advanced Red & Blue Teaming for Space, IoT & Edge Devices</p>
       <div class="cta-buttons">
-        <a href="https://github.com/s0m3on35/satellite-defense-toolkit" class="button">View on GitHub</a>
-        <a href="webgui_web/index.html" class="button secondary">Launch Dashboard</a>
+        <a href="https://github.com/s0m3on35/satellite-defense-toolkit" class="button">GitHub Repository</a>
+        <a href="webgui_web/index.html" class="button secondary">Open Live Dashboard</a>
       </div>
     </div>
   </header>
 
-  <section class="features-section">
-    <h2>Main Features</h2>
+  <!-- FEATURES -->
+  <section class="features">
+    <h2>Main Capabilities</h2>
     <div class="features-grid">
       <div class="feature-card">
-        <h3>Red Team Ops</h3>
-        <p>Run payloads IoT targets in lab setup.</p>
+        <h3>Exploits</h3>
+        <p>Launch real offensive operations on lab space system.</p>t
       </div>
       <div class="feature-card">
-        <h3>Telemetry & Anomaly Detection</h3>
-        <p>Analyze live signals and detect anomalies with ML models.</p>
+        <h3>Signal Recon</h3>
+        <p>Capture and analyze SDR, GNSS, BLE, RF, and satellite data.</p>
       </div>
       <div class="feature-card">
-        <h3>Copilot Assistant</h3>
-        <p>Get live tactical recommendations with AI-driven Copilot.</p>
+        <h3>Live Telemetry</h3>
+        <p>Monitor satellite signals and AI-detect anomalies in real time.</p>
       </div>
       <div class="feature-card">
-        <h3>Web Dashboard</h3>
-        <p>Monitor agents, trigger attacks, and visualize impact in real time.</p>
+        <h3>Operational Dashboard</h3>
+        <p>Control modules and agents with a live, tactical web interface.</p>
       </div>
     </div>
   </section>
 
-  <section class="how-it-works">
-    <h2>How It Works</h2>
+  <!-- INSTRUCTIONS -->
+  <section class="how-to">
+    <h2>Getting Started</h2>
     <ol>
-      <li>Clone the toolkit and install Python dependencies.</li>
-      <li>Launch the dashboard with <code>python3 webgui_web/app.py</code></li>
-      <li>Interact via the browser — no terminal required.</li>
-      <li>Deploy modules, visualize metrics, and export results.</li>
+      <li>Clone the repo: <code>git clone https://github.com/s0m3on35/satellite-defense-toolkit</code></li>
+      <li>Install Python dependencies: <code>pip install -r requirements.txt</code></li>
+      <li>Launch: <code>python3 webgui_web/app.py</code></li>
+      <li>Access dashboard at <code>http://localhost:5000</code></li>
     </ol>
   </section>
 
-  <section class="footer">
-    <p>© 2025 Satellite Defense Toolkit | Open Source under MIT License</p>
-  </section>
+  <!-- FOOTER -->
+  <footer>
+    <p>© 2025 Satellite Defense Toolkit • MIT License • Built by RedOps Division</p>
+  </footer>
 
   <script src="assets/script.js"></script>
 </body>

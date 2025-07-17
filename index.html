@@ -2,97 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta property="og:title" content="Satellite Defense Toolkit" />
-  <meta property="og:description" content="Secure, Analyze, and Defend Satellites and Space Infrastructure." />
-  <meta property="og:image" content="assets/hero-bg.PNG" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://s0m3on35.github.io/satellite-defense-toolkit/" />
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
   <title>Satellite Defense Toolkit</title>
-  <link rel="stylesheet" href="assets/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3/tsparticles.bundle.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
-  <div id="tsparticles"></div>
 
-  <header class="hero">
-    <div class="overlay">
-      <h1>Satellite Defense Toolkit</h1>
-      <p>Secure Against Attacks · AI & Monitoring · Forensics & Pen Tests</p>
-      <a href="https://github.com/s0m3on35/satellite-defense-toolkit" class="cta" target="_blank" rel="noopener noreferrer">
-        View on GitHub
-      </a>
+  <!-- Onboarding Screen -->
+  <div id="onboardingScreen" class="onboarding-overlay">
+    <img src="assets/satellite_banner.png" alt="Satellite Defense Toolkit" class="onboarding-banner" />
+    <h1 class="onboarding-title">Satellite Defense Toolkit</h1>
+    <p class="onboarding-subtitle">AI-Driven Monitoring • Forensics • Attack Response</p>
+    <button onclick="dismissOnboarding()">Launch Interface</button>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <h1>Satellite Defense Toolkit</h1>
+    <div class="toolbar">
+      <label for="agentSelector">Agent:</label>
+      <select id="agentSelector"></select>
+
+      <label for="categoryFilter">Category:</label>
+      <select id="categoryFilter">
+        <option value="All">All</option>
+      </select>
+
+      <input type="text" id="searchBox" placeholder="Search modules..." />
     </div>
   </header>
 
-  <main>
-    <section class="features">
-      <h2>Toolkit Highlights</h2>
-      <div class="cards">
-        <article class="card">
-          <h3>Real-Time Defense</h3>
-          <p>Live GNSS spoofing detection, firmware shields, and anomaly alerts.</p>
-        </article>
-        <article class="card">
-          <h3>AI Monitoring</h3>
-          <p>Telemetry analysis, Copilot chaining, and automated defense recommendations.</p>
-        </article>
-        <article class="card">
-          <h3>Red & Purple Teaming</h3>
-          <p>RF jammer locator, implant persistence, and adversary simulation.</p>
-        </article>
-      </div>
+  <!-- Main Content Layout -->
+  <main class="grid-layout">
+
+    <!-- Modules -->
+    <section class="module-section">
+      <h2>Modules</h2>
+      <ul id="moduleList" class="scrollable module-list"></ul>
     </section>
 
-    <section class="modules">
-      <h2>Module Showcase</h2>
-
-      <div class="filter-bar">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="forensics">Forensics</button>
-        <button class="filter-btn" data-filter="rf">RF</button>
-        <button class="filter-btn" data-filter="ai">AI</button>
+    <!-- Chain -->
+    <section class="chain-section">
+      <h2>Execution Chain</h2>
+      <ul id="chainList" class="drop-zone scrollable"></ul>
+      <div class="chain-actions">
+        <button onclick="runChain()">Run</button>
+        <button onclick="clearChain()">Clear</button>
+        <button onclick="exportChain()">Export</button>
       </div>
-
-      <div class="module-grid">
-        <div class="module-tag forensics">Timeline Builder</div>
-        <div class="module-tag forensics">Firmware Scanner</div>
-        <div class="module-tag rf">Jammer Locator</div>
-        <div class="module-tag rf">RF Signal Capture</div>
-        <div class="module-tag ai">Copilot Engine</div>
-        <div class="module-tag ai">Anomaly Detection</div>
-        <div class="module-tag ai">C2 Mesh Router</div>
-        <div class="module-tag ai">Web Dashboard</div>
-      </div>
+      <progress id="progressBar" value="0" max="100"></progress>
     </section>
 
-    <section class="about">
-      <h2>About the Toolkit</h2>
-      <p>The Satellite Defense Toolkit is a security framework built for aerospace, satellite, and ground station protection. It combines AI-driven monitoring, exploit simulation, and forensic automation to secure mission-critical space systems.</p>
+    <!-- Console -->
+    <section class="console-section">
+      <h2>Console Output</h2>
+      <pre id="consoleOutput" class="scrollable console-output"></pre>
     </section>
 
+    <!-- Metrics -->
     <section class="metrics-section">
-      <h2>Toolkit Usage Metrics</h2>
-      <canvas id="metricsChart" width="600" height="300"></canvas>
+      <h2>Metrics</h2>
+      <canvas id="metricsChart" width="400" height="150"></canvas>
     </section>
 
-    <section class="callout">
-      <h2>Contribute or Collaborate</h2>
-      <p>Explore the open-source code, suggest improvements, or join the contributors.</p>
-      <a href="https://github.com/s0m3on35/satellite-defense-toolkit" class="cta secondary" target="_blank">
-        GitHub Repository
-      </a>
+    <!-- Copilot -->
+    <aside class="copilot-panel" id="copilotPanel">
+      <h2>AI Copilot</h2>
+      <div id="copilotOutput" class="scrollable copilot-output"></div>
+      <textarea id="copilotInput" placeholder="Ask the AI Copilot..."></textarea>
+      <button onclick="sendToCopilot()">Send</button>
+    </aside>
+
+    <!-- Audit -->
+    <section class="audit-section">
+      <h2>Audit Trail</h2>
+      <pre id="auditLog" class="scrollable audit-log"></pre>
     </section>
+
+    <!-- Agent Map -->
+    <section class="map-section">
+      <h2>Agent Map</h2>
+      <div id="agentMap" class="map-placeholder">[Live map rendering here]</div>
+    </section>
+
   </main>
 
-  <footer>
-    <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations</p>
-  </footer>
+  <!-- Config Overlay -->
+  <div id="configOverlay" class="overlay">
+    <div class="overlay-content">
+      <h3>Edit Module Configuration</h3>
+      <textarea id="configEditor"></textarea>
+      <div class="overlay-buttons">
+        <button onclick="saveConfig()">Save</button>
+        <button onclick="closeConfig()">Cancel</button>
+      </div>
+    </div>
+  </div>
 
-  <script src="assets/script.js"></script>
+  <!-- Auth/Login Overlay -->
+  <div id="authPanel" class="overlay">
+    <div class="overlay-content">
+      <h3>Login</h3>
+      <input type="text" placeholder="Username" id="authUser" />
+      <input type="password" placeholder="Password" id="authPass" />
+      <button onclick="login()">Login</button>
+    </div>
+  </div>
+
+  <!-- JS Logic -->
+  <script src="main.js"></script>
 </body>
 </html>

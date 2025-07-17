@@ -8,19 +8,28 @@ import subprocess
 import threading
 from datetime import datetime
 from pathlib import Path
+import numpy as np
+import scipy.io.wavfile as wav
+from scipy.fft import fft
 
+# Paths
+MODULE_ID = "passive_satellite_fingerprinter"
 FINGERPRINT_DIR = "recon/satellite_fingerprints"
 DATABASE_FILE = "intel/satdb_known_signatures.json"
 LOG_FILE = "logs/passive_satellite_fingerprinter.log"
 ALERT_FILE = "webgui/alerts.json"
+KILLCHAIN_FILE = "reports/killchain.json"
+STIX_EXPORT = "results/stix_satellite_fingerprints.json"
 
+# Setup
 os.makedirs(FINGERPRINT_DIR, exist_ok=True)
 Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
 
 def log_event(msg):
+    timestamp = datetime.utcnow().isoformat()
     with open(LOG_FILE, "a") as f:
-        f.write(f"[{datetime.utcnow()}] {msg}\n")
-    print(msg)
+        f.write(f"[{timestamp}] {msg}\n")
+    print(f"[{timestamp}] {msg}")
 
 def scan_satellite_spectrum(center_freq="137.5M", duration_sec=20):
     output_file = f"{FINGERPRINT_DIR}/scan_{int(time.time())}.wav"
@@ -35,10 +44,6 @@ def scan_satellite_spectrum(center_freq="137.5M", duration_sec=20):
     return output_file
 
 def extract_fingerprint_features(wav_file):
-    import numpy as np
-    import scipy.io.wavfile as wav
-    from scipy.fft import fft
-
     samplerate, data = wav.read(wav_file)
     if data.ndim > 1:
         data = data[:, 0]
@@ -50,9 +55,18 @@ def extract_fingerprint_features(wav_file):
         "dominant_freq_bin": dominant,
         "peak_magnitude": float(np.max(freqs)),
         "scan_time": datetime.utcnow().isoformat(),
-        "file": wav_file
+        "file": wav_file,
+        "mean": float(np.mean(freqs)),
+        "std_dev": float(np.std(freqs))
     }
     return fingerprint
+
+def classify_fingerprint(fp):
+    if fp["peak_magnitude"] > 1e7 and fp["std_dev"] > 2e6:
+        return "suspicious_uplink"
+    elif fp["std_dev"] < 5e5:
+        return "beacon"
+    return "telemetry"
 
 def load_known_signatures():
     if os.path.exists(DATABASE_FILE):
@@ -67,24 +81,17 @@ def match_fingerprint(fp, db):
             return entry
     return None
 
-def save_result(fingerprint, match):
+def save_result(fingerprint, match, classification):
     result = {
         "timestamp": fingerprint["scan_time"],
         "matched_satellite": match["name"] if match else "Unknown",
+        "classification": classification,
         "fingerprint": fingerprint,
         "match_confidence": "high" if match else "low"
     }
     out_file = f"{FINGERPRINT_DIR}/result_{int(time.time())}.json"
     with open(out_file, "w") as f:
         json.dump(result, f, indent=2)
-    if match:
-        alert = {
-            "timestamp": result["timestamp"],
-            "type": "satellite_fingerprint_match",
-            "satellite": match["name"],
-            "confidence": "high"
-        }
-        append_alert(alert)
     return result
 
 def append_alert(alert):
@@ -100,14 +107,79 @@ def append_alert(alert):
     except Exception as e:
         log_event(f"[!] Failed to write alert: {e}")
 
+def export_stix(result):
+    stix_bundle = {
+        "type": "bundle",
+        "id": f"bundle--{os.urandom(8).hex()}",
+        "objects": [
+            {
+                "type": "observed-data",
+                "id": f"observed-data--{os.urandom(8).hex()}",
+                "created_by_ref": "identity--satellite-defense-toolkit",
+                "created": datetime.utcnow().isoformat(),
+                "first_observed": result["timestamp"],
+                "last_observed": result["timestamp"],
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "x-observed-fingerprint",
+                        "signal_type": result["classification"],
+                        "dominant_freq_bin": result["fingerprint"]["dominant_freq_bin"],
+                        "peak_magnitude": result["fingerprint"]["peak_magnitude"]
+                    }
+                }
+            }
+        ]
+    }
+    with open(STIX_EXPORT, "w") as f:
+        json.dump(stix_bundle, f, indent=2)
+    log_event("[*] STIX export complete")
+
+def plot_waterfall(wav_file):
+    try:
+        from modules.recon.rf_waterfall_plotter import generate_waterfall
+        generate_waterfall(wav_file)
+    except Exception as e:
+        log_event(f"[!] Waterfall plot error: {e}")
+
+def update_killchain(result):
+    try:
+        kill_entry = {
+            "module": MODULE_ID,
+            "timestamp": result["timestamp"],
+            "stage": "Recon",
+            "details": result
+        }
+        if os.path.exists(KILLCHAIN_FILE):
+            with open(KILLCHAIN_FILE, "r") as f:
+                killchain = json.load(f)
+        else:
+            killchain = []
+        killchain.append(kill_entry)
+        with open(KILLCHAIN_FILE, "w") as f:
+            json.dump(killchain, f, indent=2)
+    except Exception as e:
+        log_event(f"[!] Failed to update killchain: {e}")
+
 def main():
     log_event("[*] Passive Satellite Fingerprinter Started")
     wav_file = scan_satellite_spectrum()
     fingerprint = extract_fingerprint_features(wav_file)
+    classification = classify_fingerprint(fingerprint)
     known = load_known_signatures()
     match = match_fingerprint(fingerprint, known)
-    result = save_result(fingerprint, match)
-    log_event(f"[+] Scan complete. Result: {result['matched_satellite']}")
+    result = save_result(fingerprint, match, classification)
+    append_alert({
+        "timestamp": result["timestamp"],
+        "type": "satellite_scan_detected",
+        "satellite": result["matched_satellite"],
+        "classification": result["classification"],
+        "confidence": result["match_confidence"]
+    })
+    export_stix(result)
+    update_killchain(result)
+    plot_waterfall(wav_file)
+    log_event(f"[+] Scan complete. Match: {result['matched_satellite']}, Class: {classification}")
     log_event("[*] Module completed.")
 
 if __name__ == "__main__":

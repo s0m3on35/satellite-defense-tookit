@@ -2,33 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Satellite Defense Toolkit</title>
-
-  <!-- Open Graph / Social Meta -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta property="og:title" content="Satellite Defense Toolkit" />
   <meta property="og:description" content="Secure, Analyze, and Defend Satellites and Space Infrastructure." />
   <meta property="og:image" content="assets/hero-bg.PNG" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://s0m3on35.github.io/satellite-defense-toolkit/" />
-
-  <!-- Favicon -->
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
-
-  <!-- Styles -->
+  <title>Satellite Defense Toolkit</title>
   <link rel="stylesheet" href="assets/style.css" />
-
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/tsparticles@3/tsparticles.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+          e.preventDefault();
+          document.querySelector(this.getAttribute("href")).scrollIntoView({
+            behavior: "smooth"
+          });
+        });
+      });
+    });
+  </script>
 </head>
 
 <body>
   <div id="tsparticles"></div>
 
-  <header class="hero">
+  <header class="hero" style="background-image: url('assets/hero-bg.PNG');">
     <div class="overlay">
       <h1>Satellite Defense Toolkit</h1>
       <p>Secure Against Attacks · AI & Monitoring · Forensics & Pen Tests</p>
@@ -39,32 +42,59 @@
   </header>
 
   <main>
-    <section class="features">
+    <section class="features" id="features">
       <h2>Toolkit Highlights</h2>
       <div class="cards">
         <article class="card">
           <h3>Real-Time Defense</h3>
-          <p>Live GNSS spoofing detection, firmware integrity shields, and anomaly alerts.</p>
+          <p>Live GNSS spoofing detection, firmware shields, anomaly alerts.</p>
         </article>
         <article class="card">
           <h3>AI Monitoring</h3>
-          <p>Telemetry analysis, Copilot chaining, and automated defense recommendations.</p>
+          <p>Telemetry analysis, Copilot chaining, and AI-based suggestions.</p>
         </article>
         <article class="card">
           <h3>Red & Purple Teaming</h3>
-          <p>RF jammer location, implant persistence, live C2 dashboards, and adversary simulation.</p>
+          <p>RF jammer mapping, C2 dashboards, persistent implants.</p>
         </article>
       </div>
     </section>
 
-    <section class="about">
+    <section class="modules" id="modules">
+      <h2>Module Showcase</h2>
+      <div class="module-icons">
+        <div class="module-icon" onclick="scrollToSection('docs')">
+          <img src="assets/icons/ai.svg" alt="AI" />
+          <p>AI Copilot</p>
+        </div>
+        <div class="module-icon" onclick="scrollToSection('docs')">
+          <img src="assets/icons/gnss.svg" alt="GNSS" />
+          <p>GNSS Shield</p>
+        </div>
+        <div class="module-icon" onclick="scrollToSection('docs')">
+          <img src="assets/icons/firmware.svg" alt="Firmware" />
+          <p>Firmware Validator</p>
+        </div>
+        <div class="module-icon" onclick="scrollToSection('docs')">
+          <img src="assets/icons/forensics.svg" alt="Forensics" />
+          <p>Forensics</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="about" id="about">
       <h2>About the Toolkit</h2>
       <p>The Satellite Defense Toolkit is a professional-grade security framework built for aerospace, satellite, and ground station protection. It combines AI-driven monitoring, exploit simulation, and forensic automation to secure mission-critical space systems.</p>
     </section>
 
-    <section class="metrics-section">
+    <section class="metrics-section" id="metrics">
       <h2>Toolkit Usage Metrics</h2>
       <canvas id="metricsChart" width="600" height="300"></canvas>
+    </section>
+
+    <section class="docs" id="docs">
+      <h2>Documentation</h2>
+      <p>Read the <a href="docs/wiki/Overview.md">Overview.md</a>, <a href="docs/wiki/Architecture.md">Architecture.md</a>, and other technical documentation inside the <code>/docs/wiki/</code> folder.</p>
     </section>
 
     <section class="callout">
@@ -80,14 +110,36 @@
     <p>© 2025 Satellite Defense Toolkit · Built for Secure Space Operations created by D</p>
   </footer>
 
-  <div id="copilot-chat">
-    <div id="copilot-chat-header">Copilot Chat</div>
-    <div id="copilot-chat-messages"></div>
-    <div id="copilot-chat-input">
-      <input type="text" placeholder="Ask Copilot..." />
-      <button>Send</button>
-    </div>
-  </div>
+  <script>
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+
+    const ctx = document.getElementById("metricsChart");
+    if (ctx) {
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: ["Defense", "AI", "Forensics", "C2", "Visualization"],
+          datasets: [{
+            label: "Modules Executed",
+            data: [18, 12, 9, 14, 11],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+  </script>
 
   <script src="assets/script.js"></script>
 </body>

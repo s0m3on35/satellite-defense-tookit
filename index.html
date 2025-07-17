@@ -96,7 +96,6 @@
       { name: "GNSS Anomaly Detector", tag: "recon" },
 
       // --- Exploit ---
-      { name: "Wi-Fi Attack", tag: "exploit" },
       { name: "Iframe Payload Injector", tag: "exploit" },
       { name: "Upload Poisoner", tag: "exploit" },
       { name: "OTA Backdoor Stager", tag: "exploit" },
@@ -110,18 +109,19 @@
 
       // --- Forensics ---
       { name: "Firmware Timeline Builder", tag: "forensics" },
+      { name: "Firmware CVE Mapper", tag: "forensics" },
 
       // --- Intel ---
-      { name: "Firmware CVE Mapper", tag: "intel" },
+      { name: "YARA STIX Exporter", tag: "intel" },
       { name: "Zero-Day Mapper", tag: "intel" },
-      { name: "MITRE ATT&CK Tagger", tag: "intel" },
-      { name: "Threat Feed Watcher", tag: "intel" },
-      { name: "IOC Analyzer", tag: "intel" },
-      { name: "OSINT Satellite Tracker", tag: "intel" },
-      { name: "Anomaly Signature Builder", tag: "intel" },
-      { name: "Intel Timeline Builder", tag: "intel" },
-      { name: "Firmware Reputation Score", tag: "intel" },
-      { name: "Supply Chain Risk Scanner", tag: "intel" },
+      { name: "Threat Group Tracker", tag: "intel" },
+      { name: "Firmware Threat Feed Aggregator", tag: "intel" },
+      { name: "Satellite Threat Intel Parser", tag: "intel" },
+      { name: "Space-CVE Enricher", tag: "intel" },
+      { name: "Agent Fingerprint Logger", tag: "intel" },
+      { name: "Firmware Threat Classifier", tag: "intel" },
+      { name: "AI Threat Pattern Classifier", tag: "intel" },
+      { name: "C2 Infra Analyzer", tag: "intel" },
 
       // --- Stats / AI ---
       { name: "Telemetry Heatmap Generator", tag: "stats" },
@@ -142,7 +142,7 @@
       });
     }
 
-    // Populate dropdown dynamically
+    // Populate dropdown
     const tagSelect = document.getElementById("moduleTag");
     const uniqueTags = [...new Set(modules.map(m => m.tag))].sort();
     tagSelect.innerHTML = `<option value="all">All</option>`;

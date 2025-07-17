@@ -72,27 +72,51 @@
     AOS.init();
 
     const modules = [
-      { name: "BLE Scanner", tag: "recon" },
-      { name: "RF SDR Capture", tag: "recon" },
-      { name: "GNSS Anomaly Detector", tag: "recon" },
-      { name: "Copilot Recon Assistant", tag: "ai" },
-      { name: "Wi-Fi Attack", tag: "exploit" },
-      { name: "Iframe Payload Injector", tag: "exploit" },
-      { name: "Upload Poisoner", tag: "exploit" },
-      { name: "DNS C2", tag: "c2" },
-      { name: "Agent Commander", tag: "c2" },
-      { name: "Agent Mesh Router", tag: "c2" },
-      { name: "Firmware Timeline Builder", tag: "forensics" },
-      { name: "Firmware CVE Mapper", tag: "forensics" },
+      // --- Defense (complete) ---
       { name: "Firmware Memory Shield", tag: "defense" },
       { name: "Firewall Rule Generator", tag: "defense" },
       { name: "GNSS Spoof Guard", tag: "defense" },
-      { name: "Anomaly Detector LSTM", tag: "ai" },
-      { name: "Telemetry Heatmap Generator", tag: "stats" },
-      { name: "YARA STIX Exporter", tag: "intel" },
+      { name: "Firmware Integrity Watcher", tag: "defense" },
+      { name: "Firmware Signature Validator", tag: "defense" },
+      { name: "Firmware Rollback Protector", tag: "defense" },
+      { name: "Binary Integrity Watcher", tag: "defense" },
+      { name: "Interface Integrity Monitor", tag: "defense" },
+      { name: "Live Integrity Watcher", tag: "defense" },
+      { name: "Kernel Module Guard", tag: "defense" },
+      { name: "OTA Guard", tag: "defense" },
+      { name: "OTA Stream Guard", tag: "defense" },
+      { name: "RF Injection Barrier", tag: "defense" },
+      { name: "Secure Update Guard", tag: "defense" },
+      { name: "System Call Anomaly Watcher", tag: "defense" },
+      { name: "Telemetry Guardian", tag: "defense" },
+
+      // --- Recon ---
+      { name: "BLE Scanner", tag: "recon" },
+      { name: "RF SDR Capture", tag: "recon" },
+      { name: "GNSS Anomaly Detector", tag: "recon" },
+
+      // --- Exploit ---
+      { name: "Wi-Fi Attack", tag: "exploit" },
+      { name: "Iframe Payload Injector", tag: "exploit" },
+      { name: "Upload Poisoner", tag: "exploit" },
       { name: "OTA Backdoor Stager", tag: "exploit" },
       { name: "Public Screen Overwriter", tag: "exploit" },
-      { name: "Firmware Dropper", tag: "exploit" }
+      { name: "Firmware Dropper", tag: "exploit" },
+
+      // --- C2 ---
+      { name: "DNS C2", tag: "c2" },
+      { name: "Agent Commander", tag: "c2" },
+      { name: "Agent Mesh Router", tag: "c2" },
+
+      // --- Forensics ---
+      { name: "Firmware Timeline Builder", tag: "forensics" },
+      { name: "Firmware CVE Mapper", tag: "forensics" },
+
+      // --- Intel / Stats / AI ---
+      { name: "YARA STIX Exporter", tag: "intel" },
+      { name: "Telemetry Heatmap Generator", tag: "stats" },
+      { name: "Anomaly Detector LSTM", tag: "ai" },
+      { name: "Copilot Recon Assistant", tag: "ai" }
     ];
 
     function renderModules(tag = "all") {
